@@ -10,6 +10,8 @@ from PyQt4.QtCore import QObject, SIGNAL
 
 from xbee import ZigBee
 
+import orion_client
+
 class Gateway(QObject):
 
   def __init__(self, port, baudrate, parent=None):
@@ -31,8 +33,11 @@ class Gateway(QObject):
     
     self.devices = dict()
     
-    t = Thread(target=self.query_remote_diag)
-    t.start()
+    t_diag = Thread(target=self.query_remote_diag)
+    t_diag.start()
+    
+    t_orion = Thread(target=self.update_orion)
+    t_orion.start()
     
       
   def read_xbee(self, data):
@@ -98,6 +103,16 @@ class Gateway(QObject):
         except:
           pass
       time.sleep(5)
+  
+  def update_orion(self):
+    
+    while self.opened:
+      for addr in self.devices.keys():
+        
+        orion_client.createContext(self.devices[addr].element['type'],
+                                   self.devices[addr].element['id'],
+                                   self.devices[addr].attributes.values())
+      time.sleep(1)
   
   def close(self):
     
