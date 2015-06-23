@@ -1,6 +1,7 @@
 #include <IRTemp.h>
 #include <DHT.h>
 #include <ENV_TMP.h>
+#include <DFR_CO2.h>
 #include <XBee.h>
 
 //////////////////////////////////////////////////////////////////////
@@ -10,16 +11,22 @@
 #define TX_PACKET_BUFFER_SIZE 84
 
 //Sensor modules:
-#define SEN_IRT 1 //IR temperature / leaf temperature
+#define SEN_IRT 0 //IR temperature / leaf temperature
 #define SEN_TPS 1 //External temperature / soil temperature
 #define SEN_TPA 1 //External temperature / ambient temperature
+#define SEN_CO2 1 //CO2
+#define SEN_MOI 1 //Soil moisture
 
 //Pin assignment:
 #define PIN_SEN_TPS_DAT 2 //analog in
+#define PIN_SEN_CO2_DAT 3 //analog in
+#define PIN_SEN_MOI_DAT 1 //analog in
+
 #define PIN_SEN_TPA_DAT 2 //digital in
 #define PIN_SEN_IRT_CLK 6 //digital in
 #define PIN_SEN_IRT_DAT 7 //digital in
 #define PIN_SEN_IRT_ACQ 8 //digital out
+#define PIN_SEN_CO2_SIG -1 //digital in / not currently used
 
 //Fiware Entity:
 #define DEVICE_TYPE "Zone"
@@ -39,6 +46,7 @@ XBee xbee = XBee();
 IRTemp* sen_irt_ptr;
 ENV_TMP* sen_tps_ptr;
 DHT* sen_tpa_ptr;
+DFR_CO2* sen_co2_ptr;
 
 //////////////////////////////////////////////////////////////////////
 
@@ -172,6 +180,9 @@ void setup()
     
   if(SEN_TPA)
     sen_tpa_ptr = new DHT(PIN_SEN_TPA_DAT, DHT22);
+    
+  if(SEN_CO2)
+    sen_co2_ptr = new DFR_CO2(PIN_SEN_CO2_DAT, PIN_SEN_CO2_SIG);
   
   delay(2000);
 }
@@ -209,7 +220,28 @@ void loop()
     sendAttributeData("Humidity", "Percent", s_val_2);
   }
   
+  if(SEN_CO2)
+  {
+    float val = sen_co2_ptr->readValue();
+    int percent = sen_co2_ptr->getPercentage(val);
+    char s_val[32];
+    if(percent==-1)
+      strcpy(s_val, "400"); //strcpy(s_co2, "<400");
+    else
+      floatToAscii(percent, s_val);
+    sendAttributeData("CO2", "ppm", s_val);
+  }
+  
+  if(SEN_MOI)
+  {
+    int val = analogRead(PIN_SEN_MOI_DAT);
+    //float percent = (1-((val-200)/824.))*100.;
+    float percent = (1-(val/1024.))*100.;
+    char s_val[32];
+    floatToAscii(percent, s_val);
+    sendAttributeData("Moisture", "Percent", s_val);
+  }
+  
   delay(1000);
 }
-
 

@@ -10,6 +10,12 @@ DFR_CO2::DFR_CO2(uint8_t analog_pin, uint8_t bool_pin)
 {
   _analog_pin = analog_pin;
   _bool_pin = bool_pin;
+
+  if(_bool_pin!=-1)
+  {
+    pinMode(_bool_pin, INPUT);
+    digitalWrite(_bool_pin, HIGH);
+  }
 }
 
 float DFR_CO2::readValue()
