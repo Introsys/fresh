@@ -1,7 +1,16 @@
-#! /usr/bin/python
+'''
+Created on Jun 22, 2015
+
+@author: andre
+'''
+
+
+''' TODO - Improve the user experience'''
+
 
 from PyQt4 import QtCore, QtGui
-from gateway import Gateway
+from sensor_node import Gateway
+
 
 class MainWindow(QtGui.QWidget):
   
@@ -9,6 +18,7 @@ class MainWindow(QtGui.QWidget):
   
     super(MainWindow, self).__init__(parent)
     
+       
     mainLayout = QtGui.QGridLayout()
     
     #DEVICE LIST
@@ -57,11 +67,16 @@ class MainWindow(QtGui.QWidget):
     self.connect(self.gateway, QtCore.SIGNAL('newDevice'),
                  self.callbackNewDevice)
     
+    
+# -----------------------------------------------------------------------------
+  
   def closeEvent(self, event):
     print "Closing the app"
     self.gateway.close()
     self.deleteLater()
     
+# -----------------------------------------------------------------------------
+  
   def callbackNewDevice(self):
     
     name = self.gateway.devices.keys()[-1]
@@ -81,6 +96,9 @@ class MainWindow(QtGui.QWidget):
     self.deviceListLayout.addWidget(newEdit, row, 0)
     self.deviceListLayout.addWidget(newBtn, row, 1)
     
+    
+# -----------------------------------------------------------------------------
+  ''' '''
   def callbackInfoBtnClicked(self):
     
     device = self.sender().objectName()
@@ -106,13 +124,3 @@ class MainWindow(QtGui.QWidget):
       diag_obj = self.gateway.devices[str(device)].diagnostic[diag]
       self.deviceInfoText.append('%s: %s'%(diag, diag_obj))    
 
-if __name__ == '__main__':
-  
-  import sys
-  
-  app = QtGui.QApplication(sys.argv)
-  
-  mainWindowWidget = MainWindow()
-  mainWindowWidget.show()
-  
-  sys.exit(app.exec_())
