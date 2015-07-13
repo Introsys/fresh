@@ -2,7 +2,12 @@
 #include <DHT.h>
 #include <ENV_TMP.h>
 #include <DFR_CO2.h>
-#include <XBee.h>
+#include <AtlasProbes.h> 
+#include <XBee.h>       // xbee API Mode
+
+#include <Wire.h>  // enable I2C communication channel
+
+
 
 //////////////////////////////////////////////////////////////////////
 
@@ -11,22 +16,28 @@
 #define TX_PACKET_BUFFER_SIZE 84
 
 //Sensor modules:
-#define SEN_IRT 0 //IR temperature / leaf temperature
-#define SEN_TPS 1 //External temperature / soil temperature
-#define SEN_TPA 1 //External temperature / ambient temperature
-#define SEN_CO2 1 //CO2
-#define SEN_MOI 1 //Soil moisture
+#define SEN_IRT     0 // IR temperature / leaf temperature
+#define SEN_TPS     0 // External temperature / soil temperature
+#define SEN_TPA     0 // External temperature / ambient temperature
+#define SEN_CO2     0 // CO2
+#define SEN_CO2_MH  1 // CO2 MH
+#define SEN_MOI     0 // Soil moisture
+#define SEN_PH      0 // Ph 
+#define SEN_EC      0 // Electrical Conductivity
+#define SEN_ORP     0 // Oxidation-Reduction Potential 
+#define SEN_OD      0 // Dissolved Oxygen ( "DO" is a reserved word in c/c++ programing language)
 
 //Pin assignment:
-#define PIN_SEN_TPS_DAT 2 //analog in
-#define PIN_SEN_CO2_DAT 3 //analog in
-#define PIN_SEN_MOI_DAT 1 //analog in
+#define PIN_SEN_TPS_DAT    2 // analog in
+#define PIN_SEN_CO2_DAT    3 // analog in
+#define PIN_SEN_MOI_DAT    1 // analog in
+#define PIN_SEN_CO2_MH_DAT 0 // analog in
 
-#define PIN_SEN_TPA_DAT 2 //digital in
-#define PIN_SEN_IRT_CLK 6 //digital in
-#define PIN_SEN_IRT_DAT 7 //digital in
-#define PIN_SEN_IRT_ACQ 8 //digital out
-#define PIN_SEN_CO2_SIG -1 //digital in / not currently used
+#define PIN_SEN_TPA_DAT   2   // digital in
+#define PIN_SEN_IRT_CLK   6   // digital in
+#define PIN_SEN_IRT_DAT   7   // digital in
+#define PIN_SEN_IRT_ACQ   8   // digital out
+#define PIN_SEN_CO2_SIG   -1  // digital in / not currently used
 
 //Fiware Entity:
 #define DEVICE_TYPE "Zone"
@@ -47,6 +58,7 @@ IRTemp* sen_irt_ptr;
 ENV_TMP* sen_tps_ptr;
 DHT* sen_tpa_ptr;
 DFR_CO2* sen_co2_ptr;
+AtlasProbes* sen_atlas_ptr;
 
 //////////////////////////////////////////////////////////////////////
 
@@ -142,21 +154,21 @@ void sendElementData()
 
 //////////////////////////////////////////////////////////////////////
 
-void sendAttributeData(char* name, char* type, char* value)
+void sendAttributeData(char* a_name, char* a_type, char* a_value)
 {
   strcpy(buf, "{");
   strcat(buf, "\"attribute\":{");
   strcat(buf, "\"name\":");
   strcat(buf, "\"");
-  strcat(buf, name);
+  strcat(buf, a_name);
   strcat(buf, "\",");
   strcat(buf, "\"type\":");
   strcat(buf, "\"");
-  strcat(buf, type);
+  strcat(buf, a_type);
   strcat(buf, "\",");
   strcat(buf, "\"value\":");
   strcat(buf, "\"");
-  strcat(buf, value);
+  strcat(buf, a_value);
   strcat(buf, "\"}");
   strcat(buf, "}");
   sendData(buf, strlen(buf));
@@ -169,8 +181,9 @@ void setup()
   pinMode(statusLed, OUTPUT);
   pinMode(errorLed, OUTPUT);
   
-  Serial.begin(9600);
-  xbee.setSerial(Serial);
+  Serial.begin(9600);          // enable serial port
+  xbee.setSerial(Serial);      // xbee comunication to serial
+  Wire.begin();                // enable I2C port
   
   if(SEN_IRT)  
     sen_irt_ptr = new IRTemp(PIN_SEN_IRT_ACQ, PIN_SEN_IRT_CLK, PIN_SEN_IRT_DAT);
@@ -183,6 +196,10 @@ void setup()
     
   if(SEN_CO2)
     sen_co2_ptr = new DFR_CO2(PIN_SEN_CO2_DAT, PIN_SEN_CO2_SIG);
+           
+  if(SEN_EC || SEN_ORP || SEN_OD || SEN_PH)
+    sen_atlas_ptr = new AtlasProbes();
+  
   
   delay(2000);
 }
@@ -200,6 +217,8 @@ void loop()
     sendAttributeData("IRtemp", "Celsius", s_val);
   }
   
+// -----------------------------------
+
   if(SEN_TPS)
   {
     float val = sen_tps_ptr->readTemperature();
@@ -207,9 +226,12 @@ void loop()
     floatToAscii(val, s_val);
     sendAttributeData("SoilTemp", "Celsius", s_val);
   }
-  
+ 
+// -----------------------------------
+
   if(SEN_TPA)
   {
+        
     float val_1 = sen_tpa_ptr->readTemperature();
     float val_2 = sen_tpa_ptr->readHumidity();
     char s_val_1[32];
@@ -219,6 +241,8 @@ void loop()
     sendAttributeData("AmbientTemp", "Celsius", s_val_1);
     sendAttributeData("Humidity", "Percent", s_val_2);
   }
+  
+// -----------------------------------
   
   if(SEN_CO2)
   {
@@ -232,16 +256,121 @@ void loop()
     sendAttributeData("CO2", "ppm", s_val);
   }
   
+// -----------------------------------
+  
+  if(SEN_CO2_MH)
+  {
+    // val belongs to the interval [0,4, 2.0] expressed in V
+    int val = analogRead(PIN_SEN_CO2_MH_DAT);
+    // using linear interpolation we obtain the value of the read in ppm in the interval [0, 2000] 
+    float ppm = 2000*((val-400)/(2000-400));
+    char s_val[32];
+    floatToAscii(ppm, s_val);
+    sendAttributeData("CO2", "PPM", s_val);
+  }
+  
+// -----------------------------------
+
   if(SEN_MOI)
   {
     int val = analogRead(PIN_SEN_MOI_DAT);
-    //float percent = (1-((val-200)/824.))*100.;
     float percent = (1-(val/1024.))*100.;
     char s_val[32];
     floatToAscii(percent, s_val);
     sendAttributeData("Moisture", "Percent", s_val);
   }
   
-  delay(1000);
+// -----------------------------------
+
+  if(SEN_PH)
+  {
+    int i;
+    int code; 
+    SensorValues data[_PH_N_FIELDS_VALUES];
+    SensorValues *ptr_data = data;
+       
+    // this is self holding (the sleep time is 1400ms)
+    code = sen_atlas_ptr->getFormatedReadings(PH, ptr_data); 
+ 
+    if(code == 1 && ((int)ptr_data) != 0){
+      for(i=0; i < _PH_N_FIELDS_VALUES; i++){
+        sendAttributeData(ptr_data[i].s_name, ptr_data[i].s_unit, ptr_data[i].s_value);  
+      }
+    }
+    
+  delete ptr_data; 
+  
+  }
+  
+// -----------------------------------
+  
+  if(SEN_EC)
+  {
+    int i;
+    int code; 
+    SensorValues data[_EC_N_FIELDS_VALUES];
+    SensorValues *ptr_data = data;
+       
+    // this is self holding (the sleep time is 1400ms)
+    code = sen_atlas_ptr->getFormatedReadings(EC, ptr_data); 
+ 
+    if(code == 1 && ((int)ptr_data) != 0){
+      for(i=0; i < _EC_N_FIELDS_VALUES; i++){
+        sendAttributeData(ptr_data[i].s_name, ptr_data[i].s_unit, ptr_data[i].s_value);  
+      }
+    }
+    
+  delete ptr_data;
+  
+  }// SEN_EC
+  
+// -----------------------------------  
+  
+  if(SEN_ORP)
+  {
+    
+    int i;
+    int code; 
+    SensorValues data[_ORP_N_FIELDS_VALUES];
+    SensorValues *ptr_data = data;
+       
+    // this is self holding (the sleep time is 1400ms)
+    code = sen_atlas_ptr->getFormatedReadings(ORP, ptr_data); 
+ 
+    if(code == 1 && ((int)ptr_data) != 0){
+      for(i=0; i < _ORP_N_FIELDS_VALUES; i++){
+        sendAttributeData(ptr_data[i].s_name, ptr_data[i].s_unit, ptr_data[i].s_value);  
+      }
+    }
+    
+  delete ptr_data;    
+    
+  }
+  
+// -----------------------------------
+
+    if(SEN_OD)
+  {
+    int i;
+    int code; 
+    SensorValues data[_OD_N_FIELDS_VALUES];
+    SensorValues *ptr_data = data;
+       
+    // this is self holding (the sleep time is 1400ms)
+    code = sen_atlas_ptr->getFormatedReadings(OD, ptr_data); 
+ 
+    if(code == 1 && ((int)ptr_data) != 0){
+      for(i=0; i < _OD_N_FIELDS_VALUES; i++){
+        sendAttributeData(ptr_data[i].s_name, ptr_data[i].s_unit, ptr_data[i].s_value);  
+      }
+    }
+    
+  delete ptr_data;
+    
+  }
+  delay(200);
+  //delay(1000);
 }
+
+
 
