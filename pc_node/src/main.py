@@ -5,11 +5,13 @@ Created on May 15, 2015
 @author: Magno Guedes, Andre Silva
 @mail: magno.guedes@introsys.eu, andre.silva@introsys.eu
 '''
-
-from PyQt4 import QtGui
-from logging import handlers
-from gui import MainWindow
 import logging
+import sys
+import os
+from PyQt4 import QtGui
+from logging import handlers #@UnusedImport
+from gui.MainWindow import Ui_MainWindow
+
 
 # -----------------------------------------------------------------------------
 # MAIN
@@ -21,8 +23,14 @@ if __name__ == '__main__':
     # Logging format 
     log_format = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
     
-    # File rotation           
-    fh = logging.handlers.RotatingFileHandler('~/.log/fresh.log', 
+    # File rotation
+    filename = '~/.log/fresh.log'
+    if not os.path.exists(os.path.dirname(filename)):
+      os.makedirs(os.path.dirname(filename))
+      with open(filename, "w") as f:
+        f.write("# LOG FILE #")
+    
+    fh = logging.handlers.RotatingFileHandler(filename, 
                                               maxBytes=200, 
                                               backupCount=5)      
     fh.setLevel(logging.DEBUG)
@@ -47,16 +55,15 @@ if __name__ == '__main__':
 
   except IOError as e:
     print 'I/O error({0}): {1}'.format(e.errno, e.strerror)
+    #raise
   
   # --------------------------------
   
-  import sys
+
   
   app = QtGui.QApplication(sys.argv)
-  
-  mainWindowWidget = MainWindow()
-  mainWindowWidget.show()
-  
+  ex = Ui_MainWindow()
+  ex.show()
   sys.exit(app.exec_())
   
   
