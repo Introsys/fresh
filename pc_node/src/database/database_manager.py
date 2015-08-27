@@ -6,12 +6,12 @@ Created on May 26, 2015
 @mail: andre.silva@introsys.eu, magno.guedes@introsys.eu
 '''
 
-import sqlite3
-import logging
+import sqlite3 
+import logging #@UnusedImport
 import os
-
-from exceptions import IOError, Exception
-from datetime import date, datetime
+import sys
+from exceptions import IOError, Exception  #@UnusedImport
+from datetime import date, datetime #@UnusedImport
 
 class DatabaseManager(object):
 
@@ -19,123 +19,67 @@ class DatabaseManager(object):
     '''
     Constructor
     '''
+    self.dbfile = None
     
-  def create_database (self):
+  def create_database (self, dbfile = "freshdb"):
     '''
       WARNING: If the database already exists it will be deleted POSSIBLE DATA LOST
     '''    
     db = None
+    self.dbfile = dbfile
         
     try:
       print 'create db'
-      db = sqlite3.connect('freshdb')
+      db = sqlite3.connect(dbfile) # @UndefinedVariable
       print 'db created'
-      self.logger.info("data base create with success")
-      
       
       cursor = db.cursor()
       cursor.execute('pragma foreign_keys=ON') # save keeping enables foreing keys 
       
       ###################################################################
       
+      
+      # id_zone            - INTEGER (FOREIGN KEY)
+      # id_zone INTEGER NOT NULL,
       ''' 
       DEVICE SCHEMA
-      id             - UNIQUE IDENTIFIER
-      description    - TEXT - string value
-      id_zone        - INTEGER (FOREIGN KEY)
-      rssi           - REAL - float value
-      supply_voltage - REAL - float value
-      temperature    - REAL - float value
-      added_date     - TEXT - ISO8601 string ("YYYY-MM-DD HH:MM:SS.SSS")
-      last_update    - TEXT - ISO8601 string ("YYYY-MM-DD HH:MM:SS.SSS")
-      is_active      - BOOL
+      id                    - UNIQUE IDENTIFIER
+      device_id             - TEXT - unique identifier for the device
+      subscription_id       - TEXT - unique identifier of the subscription
+      subscription_timeout  - TEXT - timeout of the subscription
+      description           - TEXT - string value
+      added_date            - TEXT - ISO8601 string ("YYYY-MM-DD HH:MM:SS.SSS")
+      last_update           - TEXT - ISO8601 string ("YYYY-MM-DD HH:MM:SS.SSS")
+      is_active             - BOOL
       '''
-      cursor.execute('DROP TABLE IF EXISTS device;')
+      cursor.execute('DROP TABLE IF EXISTS nodes;')
       cursor.execute(''' 
-          CREATE TABLE IF NOT EXISTS device(
+          CREATE TABLE IF NOT EXISTS nodes(
           id INTEGER PRIMARY KEY NOT NULL,
+          device_id TEXT NOT NULL,
+          subscription_id TEXT NOT NULL,
+          subscription_timeout TEXT NOT NULL,
           description TEXT,
-          id_zone INTEGER NOT NULL,
-          id_device_buffer INTEGER NOT NULL,
-          rssi REAL,
-          supply_voltage REAL,
-          temperature REAL,
           added_date TEXT,
           last_update TEXT,
-          is_active INTEGER,
-          FOREIGN KEY(id_zone) REFERENCES zone(id)
-          FOREIGN KEY(id_device_buffer) REFERENCES device_buffer(id)
-          );        
-      ''')
-      
-      ###################################################################
-      
-      '''
-      ZONE SCHEMA
-      id             - UNIQUE IDENTIFIER
-      description    - TEXT - string value
-      id_culture     - 
-      is_active      - BOOL
-      '''
-      cursor.execute('DROP TABLE IF EXISTS zone;')
-      cursor.execute(''' 
-          CREATE TABLE IF NOT EXISTS zone(
-          id INTEGER PRIMARY KEY NOT NULL, 
-          description TEXT,
-          id_culture INTEGER NOT NULL,
-          is_active INTEGER,
-          FOREIGN KEY(id_culture) REFERENCES culture(id)
-          );
-      ''')
-      
-      ###################################################################
-      
-      '''
-      CULTURE SCHEMA
-      id             - UNIQUE IDENTIFIER
-      description    - TEXT - string value
-      is_active      - BOOL
-      '''
-      cursor.execute('DROP TABLE IF EXISTS culture;')
-      cursor.execute('''
-          CREATE TABLE IF NOT EXISTS culture(
-          id INTEGER PRIMARY KEY NOT NULL,
-          description TEXT,
           is_active INTEGER
-          );
-      ''')
+          )''')
       
-      ###################################################################
+      db.commit()
       
-      '''
-      DEVICE_BUFFER SCHEMA
-      id             - UNIQUE IDENTIFIER
-      msg            - TEXT - JSON object
-      last_update    - TEXT - ISO8601 string ("YYYY-MM-DD HH:MM:SS.SSS")
-      ''' 
-      cursor.execute('DROP TABLE IF EXISTS device_buffer;')           
-      cursor.execute(''' 
-          CREATE TABLE IF NOT EXISTS parameter(
-          id INTEGER PRIMARY KEY NOT NULL, 
-          msg TEXT,
-          last_update TEXT
-          );
-      ''')
-      
-      
-    except sqlite3.Error, e:
-
+    except sqlite3.Error, e:        # @UndefinedVariable
       print "Database Error %s:" % e.args[0]
-      #sys.exit(1)
+      sys.exit(1)
         
     finally:
       if db:
-          db.close() ## save keeping - close the database connection
+        db.close() ## save keeping - close the database connection
+        print "database created"
   
-    
+  
   def destroy_database(self):
     '''this will remove the file from the system'''
-    os.remove('data/freshdb')
+    os.remove('data/{0}'.format(self.dbfile))
     
     
 
