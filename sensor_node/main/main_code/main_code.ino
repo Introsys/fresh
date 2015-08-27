@@ -1,13 +1,17 @@
-#include <IRTemp.h>
-#include <DHT.h>
-#include <ENV_TMP.h>
-#include <DFR_CO2.h>
-#include <AtlasProbes.h> 
-#include <XBee.h>       // xbee API Mode
 
-#include <Wire.h>  // enable I2C communication channel
-
-
+#include <stdio.h>            //
+#include <string.h>           //
+#include <XBee.h>             // Xbee API Mode
+#include <Wire.h>             // enable I2C communication channel
+#include <SoftwareSerial.h>   //
+#include <IRTemp.h>           //
+#include <DHT.h>              //
+#include <ENV_TMP.h>          //
+#include <DFR_CO2.h>          //
+#include <AtlasProbes.h>      //
+#include <SHT1x.h>            //
+#include <Adafruit_AM2315.h>  //
+#include "DS1307.h"
 
 //////////////////////////////////////////////////////////////////////
 
@@ -20,28 +24,45 @@
 #define SEN_TPS     0 // External temperature / soil temperature
 #define SEN_TPA     0 // External temperature / ambient temperature
 #define SEN_CO2     0 // CO2
-#define SEN_CO2_MH  1 // CO2 MH
+#define SEN_CO2_MH  0 // C02
 #define SEN_MOI     0 // Soil moisture
-#define SEN_PH      0 // Ph 
-#define SEN_EC      0 // Electrical Conductivity
-#define SEN_ORP     0 // Oxidation-Reduction Potential 
-#define SEN_OD      0 // Dissolved Oxygen ( "DO" is a reserved word in c/c++ programing language)
+#define SEN_PH      1 // Ph - I2C (Red)
+#define SEN_EC      0 // Electrical Conductivity - I2C (Green)
+#define SEN_ORP     0 // Oxidation-Reduction Potential - I2C (Blue)
+#define SEN_OD      0 // Dissolved Oxygen ( "DO" is a reserved word in c/c++ programing language) - I2C (Yellow)
+#define SEN_RGB     0 // RGB Sensor
+#define SEN_SHT10   0 // Soil Temperature and Humidity Sensor 
+#define SEN_AM2315  0 // Air Humidity and Temp sensor - I2C
+
 
 //Pin assignment:
-#define PIN_SEN_TPS_DAT    2 // analog in
-#define PIN_SEN_CO2_DAT    3 // analog in
-#define PIN_SEN_MOI_DAT    1 // analog in
-#define PIN_SEN_CO2_MH_DAT 0 // analog in
+#define PIN_SEN_TPS_DAT    1 // analog in
+#define PIN_SEN_CO2_DAT    -1  // analog in
+#define PIN_SEN_MOI_DAT    -1  // analog in
+#define PIN_SEN_CO2_MH_DAT -1 // analog in
 
-#define PIN_SEN_TPA_DAT   2   // digital in
-#define PIN_SEN_IRT_CLK   6   // digital in
-#define PIN_SEN_IRT_DAT   7   // digital in
-#define PIN_SEN_IRT_ACQ   8   // digital out
-#define PIN_SEN_CO2_SIG   -1  // digital in / not currently used
+#define PIN_SEN_TPA_DAT   -1    // digital in
+#define PIN_SEN_IRT_CLK   -1   // digital in
+#define PIN_SEN_IRT_DAT   -1   // digital in
+#define PIN_SEN_IRT_ACQ   -1   // digital out
+#define PIN_SEN_CO2_SIG   -1   // digital in / not currently used
+
+// For the RGB Sensor
+#define PIN_SOFTWARE_SERIAL_TX  -1  // digital in - serial port emulated
+#define PIN_SOFTWARE_SERIAL_RX  -1  // digital in - serial port emulated
+
+// For the SHT10
+#define PIN_SHT10_DATA -1
+#define PIN_SHT10_CLOCK -1
+
+// Other variable
+#define SOFTWARE_SERIAL_BUAD_RATE 38400 // Do no change this!!
+#define setup_clock 0                   // Default to 0, the clock must be set only the first time our when the power supply is removed
+
 
 //Fiware Entity:
 #define DEVICE_TYPE "Zone"
-#define DEVICE_ID "ZoneX"
+#define DEVICE_ID "Zone1"
 
 //////////////////////////////////////////////////////////////////////
 
@@ -59,6 +80,10 @@ ENV_TMP* sen_tps_ptr;
 DHT* sen_tpa_ptr;
 DFR_CO2* sen_co2_ptr;
 AtlasProbes* sen_atlas_ptr;
+Adafruit_AM2315* sen_am2315;
+SHT1x* sen_sht10;
+DS1307* clock;
+SoftwareSerial *soft_serial;
 
 //////////////////////////////////////////////////////////////////////
 
@@ -185,6 +210,20 @@ void setup()
   xbee.setSerial(Serial);      // xbee comunication to serial
   Wire.begin();                // enable I2C port
   
+  // -----------------------------------
+  
+  clock = new DS1307();
+  clock->begin();
+  
+  if(setup_clock){
+    clock->fillByYMD(2015,8,11);//Jan 19,2013
+    clock->fillByHMS(9,52,00);//15:28 30"
+    clock->fillDayOfWeek(MON);//Saturday
+    clock->setTime();//write time to the RTC chip
+  }
+  
+  // -----------------------------------
+  
   if(SEN_IRT)  
     sen_irt_ptr = new IRTemp(PIN_SEN_IRT_ACQ, PIN_SEN_IRT_CLK, PIN_SEN_IRT_DAT);
   
@@ -199,10 +238,26 @@ void setup()
            
   if(SEN_EC || SEN_ORP || SEN_OD || SEN_PH)
     sen_atlas_ptr = new AtlasProbes();
+    
+  if(SEN_RGB){
+    soft_serial = new SoftwareSerial(PIN_SOFTWARE_SERIAL_RX, PIN_SOFTWARE_SERIAL_TX);
+    soft_serial-> begin(SOFTWARE_SERIAL_BUAD_RATE);
+    soft_serial-> print("E");    // command to stop continuous readings
+    delay(25);                   // give some time to the arduino 
+    soft_serial-> print("M3");   // select the reading mode, for more information please refer to the ENV-RGB documentation
+    delay(25);                  // give some time to the arduino 
+  }
   
+  if (SEN_SHT10)
+    sen_am2315 = new Adafruit_AM2315(); 
+
+  if (SEN_AM2315)
+    sen_sht10 = new SHT1x(PIN_SHT10_DATA, PIN_SHT10_CLOCK);
   
   delay(2000);
 }
+
+//////////////////////////////////////////////////////////////////////
 
 void loop()
 {
@@ -238,8 +293,8 @@ void loop()
     char s_val_2[32];
     floatToAscii(val_1, s_val_1);
     floatToAscii(val_2, s_val_2);
-    sendAttributeData("AmbientTemp", "Celsius", s_val_1);
-    sendAttributeData("Humidity", "Percent", s_val_2);
+    sendAttributeData("AirTemperature", "Celsius", s_val_1);
+    sendAttributeData("AirHumidity", "Percent", s_val_2);
   }
   
 // -----------------------------------
@@ -349,7 +404,7 @@ void loop()
   
 // -----------------------------------
 
-    if(SEN_OD)
+  if(SEN_OD)
   {
     int i;
     int code; 
@@ -368,9 +423,116 @@ void loop()
   delete ptr_data;
     
   }
+  
+// -----------------------------------
+  
+  if(SEN_RGB)
+  {
+    String td_value = "";
+    int sensor_data[8] = {0,0,0,0,0,0,0,0}; // R, G, B, lxr, lxg, lxb, lxtoal, lxbeyond
+    int sensor_data_index = 0;
+    boolean sensor_stringcomplete = false;
+   
+    soft_serial->print("R");   
+    
+    while (soft_serial->available()) 
+    {
+      char inchar = (char)soft_serial->read();            
+      if(inchar == ',')
+      {
+        sensor_data[sensor_data_index++] = td_value.toInt(); // values range from 0 to 255        
+        td_value = "";       
+      } 
+      else if (inchar == '\r') 
+      {
+        sensor_data[sensor_data_index] = td_value.toInt(); // values range from 0 to 255
+        td_value = "";
+        sensor_stringcomplete = true;
+        sensor_data_index = 0;
+        
+      }else{       
+        td_value += inchar;      
+      }
+    } 
+
+    if (sensor_stringcomplete)
+    {
+      char r [10];
+      itoa(sensor_data[0], r, 10);
+      sendAttributeData("R", "color", r);
+      char g [10];
+      itoa(sensor_data[1], g, 10);        
+      sendAttributeData("G", "color", g);
+      char b [10];
+      itoa(sensor_data[2], b, 10);       
+      sendAttributeData("B", "color", b);
+      char lxr [10];
+      itoa(sensor_data[3], lxr, 10);        
+      sendAttributeData("lxr", "color", lxr);
+      char lxg [10];
+      itoa(sensor_data[4], lxg, 10);        
+      sendAttributeData("lxg", "color", lxg);
+      char lxb [10];
+      itoa(sensor_data[5], lxb, 10);        
+      sendAttributeData("lxb", "color", lxb);
+      char lxtotal [10];
+      itoa(sensor_data[6], lxtotal, 10);        
+      sendAttributeData("lxtotal", "color", lxtotal);
+      char lxbeyond [10];
+      itoa(sensor_data[7], lxbeyond, 10);        
+      sendAttributeData("lxbeyond", "color", lxbeyond); 
+    } 
+  }
+  
+// -----------------------------------
+  
+  if (SEN_SHT10)
+  {
+  float temperature;
+  char s_temperature[32];
+  temperature = sen_sht10->readTemperatureC();
+  floatToAscii(temperature, s_temperature);
+  sendAttributeData("SoilTemperature", "Celsius", s_temperature); 
+  
+  float humidity;
+  char s_humidity[32];
+  humidity = sen_sht10->readHumidity();
+  floatToAscii(humidity, s_humidity);
+  sendAttributeData("SoilHumidity", "Percent", s_humidity);  
+  }
+    
+// -----------------------------------
+
+  if (SEN_AM2315)
+  {
+    float temperature = sen_am2315->readTemperature();
+    char s_temperature[32];
+    floatToAscii(temperature, s_temperature);
+    sendAttributeData("AirTemperature", "Celsius", s_temperature); 
+    
+    float humidity = sen_am2315->readHumidity();
+    char s_humidity[32];
+    floatToAscii(humidity, s_humidity);
+    sendAttributeData("AirHumidity", "Percent", s_humidity); 
+
+  }
+    
+  clock->getTime();
+  char time[20];
+  sprintf(time, "%d-%d-%d %d:%d:%d",
+    clock->year, 
+    clock->month, 
+    clock->dayOfMonth, 
+    clock->hour, 
+    clock->minute, 
+    clock->second);
+  sendAttributeData("RTCTIME","DD-MM-YY|hh-mm-ss",time); 
+  
   delay(200);
   //delay(1000);
-}
+  
+} // lopp()
 
 
-
+//////////////////////////////////////////////////////////////////////
+//EOF
