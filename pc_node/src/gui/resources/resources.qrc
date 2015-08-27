@@ -1,0 +1,26 @@
+<RCC>
+  <qresource prefix="/images">
+    <file>on.png</file>
+    <file>off.png</file>
+    <file>reports_color.png</file>
+    <file>open_folder.png</file>
+    <file>add.png</file>
+    <file>quitapp_color.png</file>
+    <file>delete.png</file>
+    <file>refresh.png</file>
+    <file>details.png</file>
+    <file>edit.png</file>
+    <file>network_color.png</file>
+    <file>save.png</file>
+    <file>preferences.png</file>
+    <file>fresh.png</file>
+    <file>undo.png</file>
+    <file>details_color.png</file>
+    <file>quitapp.png</file>
+    <file>reports.png</file>
+    <file>network.png</file>
+    <file>cancel.png</file>
+    <file>preferences_color.png</file>
+    <file>remove.png</file>
+  </qresource>
+</RCC>

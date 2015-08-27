@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   height="38"
+   version="1.1"
+   viewBox="0 0 38 38"
+   width="38"
+   id="svg2"
+   inkscape:version="0.48.4 r9939"
+   sodipodi:docname="exitApp.svg">
+  <metadata
+     id="metadata16">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1869"
+     inkscape:window-height="1056"
+     id="namedview14"
+     showgrid="false"
+     inkscape:showpageshadow="false"
+     showguides="true"
+     inkscape:guide-bbox="true"
+     inkscape:zoom="6.5555556"
+     inkscape:cx="24.387519"
+     inkscape:cy="11.419331"
+     inkscape:window-x="51"
+     inkscape:window-y="24"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="g3807">
+    <inkscape:grid
+       type="xygrid"
+       id="grid2993"
+       empspacing="5"
+       visible="true"
+       enabled="true"
+       snapvisiblegridlinesonly="true" />
+    <sodipodi:guide
+       orientation="0,1"
+       position="3,35"
+       id="guide2995" />
+    <sodipodi:guide
+       orientation="1,0"
+       position="3,28"
+       id="guide2997" />
+    <sodipodi:guide
+       orientation="0,1"
+       position="14,3"
+       id="guide2999" />
+    <sodipodi:guide
+       orientation="1,0"
+       position="36,20"
+       id="guide3001" />
+  </sodipodi:namedview>
+  <desc
+     id="desc6" />
+  <defs
+     id="defs8" />
+  <g
+     inkscape:groupmode="layer"
+     id="layer2"
+     inkscape:label="background"
+     style="display:none">
+    <rect
+       style="fill:#000000;fill-opacity:1"
+       id="rect3033"
+       width="38"
+       height="38"
+       x="0"
+       y="0" />
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="layer1"
+     inkscape:label="Layer"
+     style="display:inline">
+    <g
+       id="Page-1"
+       style="fill:none;stroke:none"
+       transform="matrix(1.7966101,0,0,1.7966101,3.2627119,2.9576275)">
+      <g
+         id="Core"
+         transform="translate(-87,-213)"
+         style="fill:#000000">
+        <g
+           id="exit-to-app"
+           transform="translate(87,213)">
+          <path
+             d="M 7.1,12.6 8.5,14 13.5,9 8.5,4 7.1,5.4 9.7,8 0,8 l 0,2 9.7,0 -2.6,2.6 0,0 z M 16,0 2,0 C 0.9,0 0,0.9 0,2 l 0,4 2,0 0,-4 14,0 0,14 -14,0 0,-4 -2,0 0,4 c 0,1.1 0.9,2 2,2 l 14,0 c 1.1,0 2,-0.9 2,-2 L 18,2 C 18,0.9 17.1,0 16,0 l 0,0 z"
+             id="Shape"
+             inkscape:connector-curvature="0"
+             style="fill:#ffffff;fill-opacity:1;stroke:none" />
+        </g>
+      </g>
+    </g>
+  </g>
+  <g
+     style="display:inline"
+     inkscape:label="Layer copy"
+     id="g3807"
+     inkscape:groupmode="layer">
+    <g
+       transform="matrix(1.7966101,0,0,1.7966101,3.2627119,2.9576275)"
+       style="fill:#5fbcd3;fill-opacity:1;stroke:none"
+       id="g3809">
+      <g
+         style="fill:#5fbcd3;fill-opacity:1"
+         transform="translate(-87,-213)"
+         id="g3811">
+        <g
+           transform="translate(87,213)"
+           id="g3813"
+           style="fill:#5fbcd3;fill-opacity:1">
+          <path
+             style="fill:#5fbcd3;fill-opacity:1;stroke:none"
+             inkscape:connector-curvature="0"
+             id="path3815"
+             d="M 7.1,12.6 8.5,14 13.5,9 8.5,4 7.1,5.4 9.7,8 0,8 l 0,2 9.7,0 -2.6,2.6 0,0 z M 16,0 2,0 C 0.9,0 0,0.9 0,2 l 0,4 2,0 0,-4 14,0 0,14 -14,0 0,-4 -2,0 0,4 c 0,1.1 0.9,2 2,2 l 14,0 c 1.1,0 2,-0.9 2,-2 L 18,2 C 18,0.9 17.1,0 16,0 l 0,0 z" />
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

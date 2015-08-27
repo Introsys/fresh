@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   height="48"
+   version="1.1"
+   viewBox="0 0 48 48"
+   width="48"
+   id="svg2"
+   inkscape:version="0.48.4 r9939"
+   sodipodi:docname="undo.svg"
+   inkscape:export-filename="/home/andre/CodeWorkspaces/eclipsemars/fresh-pcnode/src/gui/resources/undo.png"
+   inkscape:export-xdpi="90"
+   inkscape:export-ydpi="90">
+  <metadata
+     id="metadata13">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1869"
+     inkscape:window-height="1056"
+     id="namedview11"
+     showgrid="false"
+     inkscape:showpageshadow="false"
+     inkscape:zoom="5.2149125"
+     inkscape:cx="1.0799033"
+     inkscape:cy="22.338564"
+     inkscape:window-x="51"
+     inkscape:window-y="24"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg2" />
+  <defs
+     id="defs6" />
+  <g
+     id="Icons with numbers"
+     style="fill:#ff6600;stroke:none"
+     transform="matrix(2.72582,0,0,2.72582,2.19344,2.19344)">
+    <g
+       id="Group"
+       transform="translate(-48,-576)"
+       style="fill:#ff6600">
+      <path
+         d="m 56,592 c 4.418278,0 8,-3.58172 8,-8 0,-4.41828 -3.581722,-8 -8,-8 -4.418278,0 -8,3.58172 -8,8 0,4.41828 3.581722,8 8,8 l 0,0 z m 0,-4 c 1.656854,0 3,-1.34315 3,-3 0,-1.65685 -1.343146,-3 -3,-3 l 0,2 -4,-3 4,-3 0,2 c 2.761424,0 5,2.23858 5,5 0,2.76142 -2.238576,5 -5,5 -2.761424,0 -5,-2.23858 -5,-5 0,-0.6151 0.11107,-1.20426 0.314274,-1.74858 l 1.709671,1.36774 C 53.008147,584.74383 53,584.87096 53,585 c 0,1.65685 1.343146,3 3,3 l 0,0 z m 0,0"
+         id="Shape"
+         inkscape:connector-curvature="0"
+         style="fill:#ff6600" />
+    </g>
+  </g>
+</svg>

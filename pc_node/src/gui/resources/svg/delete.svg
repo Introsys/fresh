@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   height="48"
+   viewBox="0 0 48 48"
+   width="48"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.48.4 r9939"
+   sodipodi:docname="delete.svg"
+   inkscape:export-filename="/home/andre/CodeWorkspaces/eclipsemars/fresh-pcnode/src/gui/resources/delete.png"
+   inkscape:export-xdpi="90"
+   inkscape:export-ydpi="90">
+  <metadata
+     id="metadata12">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs10" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1869"
+     inkscape:window-height="1056"
+     id="namedview8"
+     showgrid="false"
+     inkscape:showpageshadow="false"
+     inkscape:zoom="5.6568542"
+     inkscape:cx="86.218666"
+     inkscape:cy="20.558887"
+     inkscape:window-x="51"
+     inkscape:window-y="24"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg2" />
+  <path
+     d="m 9.6949153,40.689266 c 0,2.634519 2.1338417,4.768361 4.7683617,4.768361 h 19.073446 c 2.63452,0 4.768362,-2.133842 4.768362,-4.768361 V 12.079096 H 9.6949153 v 28.61017 z M 40.689266,4.9265537 H 32.344633 L 29.960452,2.5423729 H 18.039548 L 15.655367,4.9265537 H 7.3107345 V 9.6949153 H 40.689266 V 4.9265537 z"
+     id="path4"
+     inkscape:connector-curvature="0"
+     style="fill:#ff0000" />
+  <path
+     d="M0 0h48v48h-48z"
+     fill="none"
+     id="path6" />
+</svg>
