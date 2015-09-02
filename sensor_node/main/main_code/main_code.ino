@@ -21,41 +21,42 @@
 #define TX_PACKET_BUFFER_SIZE 84
 
 //Sensor modules:
-#define SEN_IRT     0 // IR temperature / leaf temperature
-#define SEN_TPS     0 // External temperature / soil temperature
-#define SEN_TPA     0 // External temperature / ambient temperature
-#define SEN_CO2     0 // CO2
-#define SEN_CO2_MH  0 // C02
-#define SEN_MOI     0 // Soil moisture
-#define SEN_PH      0 // Ph - I2C (Red)
-#define SEN_EC      0 // Electrical Conductivity - I2C (Green)
-#define SEN_ORP     0 // Oxidation-Reduction Potential - I2C (Blue)
-#define SEN_OD      0 // Dissolved Oxygen ( "DO" is a reserved word in c/c++ programing language) - I2C (Yellow)
-#define SEN_RGB     1 // RGB Sensor
-#define SEN_SHT10   1 // Soil Temperature and Humidity Sensor 
-#define SEN_AM2315  1 // Air Humidity and Temp sensor - I2C
-#define LCD_ON      1 // Monitor
+#define SEN_IRT       0 // IR temperature / leaf temperature
+#define SEN_TPS       0 // External temperature / soil temperature
+#define SEN_TPA       0 // External temperature / ambient temperature
+#define SEN_CO2       0 // CO2
+#define SEN_CO2_MH    0 // C02
+#define SEN_MOI       0 // Soil moisture Groove SSG
+#define SEN_MOI_IS    0 // Soil moisture ITEAD Studio
+#define SEN_PH        0 // Ph - I2C (Red)
+#define SEN_EC        0 // Electrical Conductivity - I2C (Green)
+#define SEN_ORP       0 // Oxidation-Reduction Potential - I2C (Blue)
+#define SEN_OD        0 // Dissolved Oxygen ( "DO" is a reserved word in c/c++ programing language) - I2C (Yellow)
+#define SEN_RGB       0 // RGB Sensor
+#define SEN_SHT10     0 // Soil Temperature and Humidity Sensor 
+#define SEN_AM2315    0 // Air Humidity and Temp sensor - I2C
+#define LCD_ON        0 // Monitor
 
 
 //Pin assignment:
-#define PIN_SEN_TPS_DAT    -1 // analog in
+#define PIN_SEN_TPS_DAT    -1  // analog in
 #define PIN_SEN_CO2_DAT    -1  // analog in
 #define PIN_SEN_MOI_DAT    -1  // analog in
-#define PIN_SEN_CO2_MH_DAT -1 // analog in
+#define PIN_SEN_CO2_MH_DAT -1  // analog in
 
-#define PIN_SEN_TPA_DAT   -1   // digital in
-#define PIN_SEN_IRT_CLK   -1   // digital in
-#define PIN_SEN_IRT_DAT   -1   // digital in
-#define PIN_SEN_IRT_ACQ   -1   // digital out
+#define PIN_SEN_TPA_DAT   -1   // digital in 
+#define PIN_SEN_IRT_CLK   -1   // digital in - white wire
+#define PIN_SEN_IRT_DAT   -1   // digital in - yellow wire
+#define PIN_SEN_IRT_ACQ   -1   // digital out - blue wire
 #define PIN_SEN_CO2_SIG   -1   // digital in / not currently used
 
 // For the RGB Sensor
-#define PIN_SOFTWARE_SERIAL_TX  2  // digital in - serial port emulated - white
-#define PIN_SOFTWARE_SERIAL_RX  3  // digital in - serial port emulated - yellow
+#define PIN_SOFTWARE_SERIAL_TX  -1  // digital in - serial port emulated - white
+#define PIN_SOFTWARE_SERIAL_RX  -1  // digital in - serial port emulated - yellow
 
 // For the SHT10
-#define PIN_SHT10_DATA  8 // data - white
-#define PIN_SHT10_CLOCK 9 // clock - yellow
+#define PIN_SHT10_DATA  -1 // data - white
+#define PIN_SHT10_CLOCK -1 // clock - yellow
 
 // Other variable
 #define SOFTWARE_SERIAL_BUAD_RATE 38400 // Do no change this!!
@@ -64,7 +65,7 @@
 
 //Fiware Entity:
 #define DEVICE_TYPE "Zone"
-#define DEVICE_ID "0013A20040AFC19B" // Zone1
+#define DEVICE_ID "Sensor 4" // Zone1
 
 //////////////////////////////////////////////////////////////////////
 
@@ -210,8 +211,8 @@ void setup()
   pinMode(errorLed, OUTPUT);
   
   // For arduino leonardo
-  //Serial1.begin(9600);          // enable serial port
-  //xbee.setSerial(Serial1);      // xbee comunication to serial
+  //Serial1.begin(9600);          // enable serial port TTL
+  //xbee.setSerial(Serial1);      // xbee comunication to serial TTL
   // for arduino uno
   Serial.begin(9600);          // enable serial port
   xbee.setSerial(Serial);      // xbee comunication to serial
@@ -304,10 +305,11 @@ void loop()
 
   if(SEN_TPS)
   {
-
-    
     float val = sen_tps_ptr->readTemperature();
     char s_val[32];
+    if(val < 0 ){
+      val = 0;
+    }
     floatToAscii(val, s_val);
     sendAttributeData("SoilTemp", "Celsius", s_val);
     
@@ -321,7 +323,13 @@ void loop()
       lcd.print(" C");
       delay(100);
     }
-  }
+  
+   double a;
+   a = analogRead(2);
+   Serial.print("Analog ");
+   Serial.print(a);
+
+   }
  
 // -----------------------------------
 
@@ -404,13 +412,14 @@ void loop()
   }
   
   
-// -----------------------------------
-
   if(SEN_MOI)
   {
-    int val = analogRead(PIN_SEN_MOI_DAT);
-    float percent = (1-(val/1024.))*100.;
-    char s_val[32];
+    int val;
+    float percent;
+    val = analogRead(PIN_SEN_MOI_DAT);
+    if (val > 1024) val = 1024;
+    percent = ((val/1024.)*100.); // 1024 is the maximum amplitude (10 bits of resolution)
+    char s_val[32]; 
     floatToAscii(percent, s_val);
     sendAttributeData("Moisture", "Percent", s_val);
     
@@ -426,6 +435,7 @@ void loop()
     }
   
   }
+ 
   
 // -----------------------------------
 
@@ -437,25 +447,27 @@ void loop()
     SensorValues *ptr_data = data;
        
     // this is self holding (the sleep time is 1400ms)
-    code = sen_atlas_ptr->getFormatedReadings(PH, ptr_data); 
- 
+    code = sen_atlas_ptr->getFormatedReadings(PH, ptr_data);      
     if(code == 1 && ((int)ptr_data) != 0){
       for(i=0; i < _PH_N_FIELDS_VALUES; i++){
         sendAttributeData(ptr_data[i].s_name, ptr_data[i].s_unit, ptr_data[i].s_value);  
       }
+    }else{
+      sendAttributeData("PH", "N/A", "Error");  
     }
       
     // -----------------------------------
-    if(LCD_ON){
+    if(LCD_ON && code == 1){
       lcd.clear();
       char msg[30];
       sprintf(msg,"%s: %d %s", ptr_data[0].s_name, ptr_data[0].s_value, ptr_data[0].s_unit); 
       lcd.print(msg);
       delay(100);
+    }else if(LCD_ON && code != 1){
+      sendAttributeData("OD", "N/A", "Error");  
     }
 
-    delete ptr_data; 
-  
+    ptr_data = 0;   
   }
   
 // -----------------------------------
@@ -474,18 +486,22 @@ void loop()
       for(i=0; i < _EC_N_FIELDS_VALUES; i++){
         sendAttributeData(ptr_data[i].s_name, ptr_data[i].s_unit, ptr_data[i].s_value);  
       }
+    }else{
+        sendAttributeData("EC", "N/A", "Error");  
     }
       
     // -----------------------------------
-    if(LCD_ON){
+    if(LCD_ON && code == 1){
       lcd.clear();
       char msg[30];
       sprintf(msg,"%s: %d %s", ptr_data[0].s_name, ptr_data[0].s_value, ptr_data[0].s_unit); 
       lcd.print(msg);
       delay(100);
+    }else if(LCD_ON && code != 1){
+      sendAttributeData("OD", "N/A", "Error");  
     }
 
-    delete ptr_data;  
+    ptr_data = 0; 
   
   }// SEN_EC
   
@@ -506,18 +522,22 @@ void loop()
       for(i=0; i < _ORP_N_FIELDS_VALUES; i++){
         sendAttributeData(ptr_data[i].s_name, ptr_data[i].s_unit, ptr_data[i].s_value);  
       }
+    }else{
+        sendAttributeData("ORP", "N/A", "Error");  
     }
     
     // -----------------------------------
-    if(LCD_ON){
+    if(LCD_ON && code == 1){
       lcd.clear();
       char msg[30];
       sprintf(msg,"%s: %d %s", ptr_data[0].s_name, ptr_data[0].s_value, ptr_data[0].s_unit); 
       lcd.print(msg);
       delay(100);
+    }else if(LCD_ON && code != 1){
+      sendAttributeData("OD", "N/A", "Error");  
     }
 
-    delete ptr_data;  
+    ptr_data = 0;  
     
   }
   
@@ -537,20 +557,25 @@ void loop()
       for(i=0; i < _OD_N_FIELDS_VALUES; i++){
         sendAttributeData(ptr_data[i].s_name, ptr_data[i].s_unit, ptr_data[i].s_value);  
       }
+    }else{
+        sendAttributeData("OD", "N/A", "Error");  
     }
     
     // -----------------------------------
-    if(LCD_ON){
+    if(LCD_ON && code == 1){
       lcd.clear();
       char msg[30];
       sprintf(msg,"%s: %d %s", ptr_data[0].s_name, ptr_data[0].s_value, ptr_data[0].s_unit); 
       lcd.print(msg);
       delay(100);
+    }else if(LCD_ON && code != 1){
+      sendAttributeData("OD", "N/A", "Error");  
     }
 
-    delete ptr_data;  
+    ptr_data = 0;  
     
   }
+
   
 // -----------------------------------
   
