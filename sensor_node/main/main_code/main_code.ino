@@ -64,8 +64,8 @@
 
 
 //Fiware Entity:
-#define DEVICE_TYPE "Zone"
-#define DEVICE_ID "Sensor 4" // Zone1
+#define DEVICE_TYPE "defaut"
+#define DEVICE_ID "default"
 
 //////////////////////////////////////////////////////////////////////
 
