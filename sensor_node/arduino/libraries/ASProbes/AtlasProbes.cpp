@@ -23,35 +23,45 @@ AtlasProbes::AtlasProbes(){
 //
 int AtlasProbes::probeReading(int address){
 
-
+    int error;
     Wire.flush();                            // clear the communication channel.
 
-    delay(50);
+    delay(250);
     memset(probe_data, 0, sizeof(probe_data));
 
     Wire.beginTransmission(address);         // call the circuit by its ID number.
     Wire.write('r');                         // send a READ ('r') command to the EC Circuit define above and returns a single reading
-    Wire.endTransmission();                  // end the I2C data transmission.
-    // !! IMPORTANT !!
-    delay(time);                             // wait the correct amount of time for the circuit to complete its instruction.
-    Wire.requestFrom(address, 48, 1);        // call the circuit and request 20 bytes (this may be more then we need).
-    code = Wire.read();                      // the first byte is the response code, we read this separately.
-    while (Wire.available()) {               // are there bytes to receive.
-        in_char = Wire.read();               // receive a byte.
-        probe_data[i] = in_char;             // load this byte into our array.
-        i += 1;                              // incur the counter for the array element.
-        if (in_char == 0) {                  // if we see that we have been sent a null command.
-            i = 0;                           // reset the counter i to 0.
-            Wire.endTransmission();          // end the I2C data transmission.
-            break;                           // exit the while loop.
-        }
+    error = Wire.endTransmission();          // end the I2C data transmission.
+
+    delay(1000); 		             // give time to receive the response to the I2C query
+
+    //Serial.print("\n\n\n");
+    //Serial.print(error);
+    //Serial.print("\n\n\n");
+
+    if (error == 0){			     // verify that the device exists in the I2C channel
+	// !! IMPORTANT !!
+	delay(time);                         // wait the correct amount of time for the circuit to complete its instruction.
+	Wire.requestFrom(address, 48, 1);    // call the circuit and request 20 bytes (this may be more then we need).
+	code = Wire.read();                  // the first byte is the response code, we read this separately.
+	while (Wire.available()) {           // are there bytes to receive.
+	in_char = Wire.read();               // receive a byte.
+	probe_data[i] = in_char;             // load this byte into our array.
+	i += 1;                              // incur the counter for the array element.
+	if (in_char == 0) {                  // if we see that we have been sent a null command.
+	    i = 0;                           // reset the counter i to 0.
+	    Wire.endTransmission();          // end the I2C data transmission.
+	    break;                           // exit the while loop.
+	}
+	}
+
+	// 1 means the command was successful
+	// 2 means the command has failed
+	// 254 means the command has not yet been finished calculating
+	// 255 means there is no further data to send
+    }else {
+	code = 2;
     }
-
-    // 1 means the command was successful
-    // 2 means the command has failed
-    // 254 means the command has not yet been finished calculating
-    // 255 means there is no further data to send
-
     return code;
 
 }// getProbeReading
