@@ -42,9 +42,9 @@ class Ui_WidgetReport(QWidget):
     webhdfs_url = 'http://130.206.80.46:14000/webhdfs/v1'
     auth_url = 'https://130.206.80.46:13000/cosmos-auth/v1'
     local_filepath = os.environ['HOME']+os.sep+'.fresh'+os.sep+'history'
-    username = 'magno.guedes@introsys.eu'
-    password = 'fct22149'
-    cosmos_user = 'magno.guedes'
+    username = ''
+    password = ''
+    cosmos_user = ''
     serv = 'fresh'
     servpath = 'fresh'
     #--------------------------
