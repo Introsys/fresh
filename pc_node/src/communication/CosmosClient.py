@@ -11,9 +11,9 @@ from time import time
 
 class CosmosClient(object):
   
-  __slots__ = ('username', 'password', 'webhdfs_url', 'auth_url',
-               'hdfs_username', 'hdfs_filepath', 'hdfs_filename',
-               'token', 'token_expires', 'history')
+  __slots__ = ('username','password','webhdfs_url','auth_url','hdfs_username',
+               'hdfs_filepath','hdfs_filename','token','token_expires',
+               'history','local_filepath','local_filename')
 
   def __init__(self):
     
@@ -27,6 +27,8 @@ class CosmosClient(object):
     self.token = None
     self.token_expires = int(time())
     self.history = None
+    self.local_filepath = os.environ['HOME']+os.sep+'.fresh'+os.sep+'history'
+    self.local_filename = ''
   
   #----------------------------------------------------------------------------
   
@@ -46,6 +48,7 @@ class CosmosClient(object):
       self.token = r.json()['access_token']
       print 'New token from cosmos: %s' % self.token
       self.token_expires = int(time()) + int(r.json()['expires_in'])
+      return self.token
     except:
       raise
   
@@ -72,6 +75,8 @@ class CosmosClient(object):
     
     try:
       url = self.webhdfs_url+'/user/'+self.hdfs_username+self.hdfs_filepath+self.hdfs_filename
+      print url
+      print self.getToken()
       headers = {'Accept': 'application/json',
                  'Content-Type': 'application/json',
                  'X-Auth-Token': self.getToken()}
@@ -90,27 +95,24 @@ class CosmosClient(object):
     if not self.history:
       raise NameError("No historic data to write")
     
-    file_path = os.environ['HOME'] + '/.fresh/history'
-    if not os.path.exists(file_path):
-      os.makedirs(file_path)
+    if not os.path.exists(self.local_filepath):
+      os.makedirs(self.local_filepath)
     
     try:
-      with open(file_path+'/history.txt', 'w+') as hist_file:
-        hist_file.write(self.history)
+      with open(self.local_filepath+os.sep+self.local_filename, 'w+') as h_file:
+        h_file.write(self.history)
     except:
-      raise NameError('Error writing token to file')
+      raise NameError('Error writing history to file')
    
   #---------------------------------------------------------------------------- 
   
   def readHistoryFromFile(self):
     
-    file_path = os.environ['HOME'] + '/.fresh/history'
-    
     try:
-      with open(file_path+'/history.txt', 'r') as hist_file:
-        self.history = hist_file.read()
+      with open(self.local_filepath+os.sep+self.local_filename, 'r') as h_file:
+        self.history = h_file.read()
     except:
-      raise NameError('Error reading token from file')    
+      raise NameError('Error reading history from file')    
 
 #==============================================================================
 
