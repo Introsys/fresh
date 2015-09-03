@@ -106,31 +106,6 @@ class Ui_WidgetReport(QWidget):
         connect(self.handle_combo_sensor_changed)
       self.button_refresh.clicked.\
         connect(self.handle_button_refresh_clicked)
-        
-      
-      #w2.plot(x=dates, y=values, symbol='o')
-      #x=np.array([0,1,2,3,4,5,6,7])
-      #y=np.array([0,1,2,3,4,5,6,7])
-      #w1.plot(x,y)
-
-      """
-      v1 = pg.ImageView()
-      layout.addWidget(v1, 0, 1)
-      v2 = pg.ImageView()
-      layout.addWidget(v2, 1, 1)
-      
-      ## generate random input data
-      data = np.random.normal(size=(100,100))
-      data = 25 * pg.gaussianFilter(data, (5,5))
-      data += np.random.normal(size=(100,100))
-      data[40:60, 40:60] += 15.0
-      data[30:50, 30:50] += 15.0
-      #data += np.sin(np.linspace(0, 100, 1000))
-      #data = metaarray.MetaArray(data, info=[{'name': 'Time', 'values': np.linspace(0, 1.0, len(data))}, {}])
-
-      ## Set the raw data as the input value to the flowchart
-      fc.setInput(dataIn=data)
-      """
   
   #----------------------------------------------------------------------------
   
