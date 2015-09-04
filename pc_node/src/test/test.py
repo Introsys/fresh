@@ -1,0 +1,33 @@
+#!/usr/bin/python
+'''
+Created on Sep 3, 2015
+
+@author: andre
+'''
+
+from z3c.rml import rml2pdf
+import datetime
+import preppy
+import sys
+
+
+def main(argv):
+    # Load the rml template into the preprocessor, ...
+    template = preppy.getModule('testDoc.prep')
+        
+    # ... and do the preprocessing.
+    #{{def(sensor, date, requester_name, requester_address, requester_contact, expert_name, expert_address, expert_contact, observations, plot)}}
+    rmlText = template.get("Sensor 1", datetime.datetime.now().strftime("%Y-%m-%d"), "Andre Silva", "Introsys - Moita", "andre.silva@introsys.eu", "Magno Guedes", "Introsys - Moita", "magno.guedes@introsys.eu", "bla bla bla bla iscas saquetas", "bar_2d8.png")
+    
+    # Finally generate the *.pdf output ...
+    pdf = rml2pdf.parseString(rmlText)
+    
+    # ... and save it.
+    with open('rmlReport.pdf', 'w') as pdfFile:
+        pdfFile.write(pdf.read())
+
+
+
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
