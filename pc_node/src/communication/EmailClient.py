@@ -18,10 +18,7 @@ from reportlab.pdfgen import canvas
 class EmailClient(QtCore.QObject):
   ''' TODO - Description'''
 
-  fromAddr        = None
-  toAddr          = None
-  smtpServerUrl   = None
-  smtpServerPort  = None
+
 
   def __init__(self, smtp_url = 'smtp.gmail.com', smtp_port = 25, username = '', password = ''):
       ''' TODO - Description '''
