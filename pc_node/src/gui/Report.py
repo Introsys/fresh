@@ -5,17 +5,25 @@ Created on Aug 24, 2015
 '''
 from PyQt4 import QtCore
 from PyQt4.Qt import pyqtSlot
-from PyQt4.QtGui import QWidget, QGridLayout, QComboBox, QPushButton
+from PyQt4.QtGui import QWidget, QStackedWidget, QGridLayout, QScrollArea
+from PyQt4.QtGui import QFrame, QGroupBox, QLabel, QPixmap, QFileDialog, QInputDialog
+from PyQt4.QtGui import QLineEdit, QTextEdit, QComboBox, QPushButton
 
 import os
 import time
+from z3c.rml import rml2pdf
 import datetime
+import preppy
 import json
 
+
+
 import pyqtgraph as pg
+import pyqtgraph.exporters
 import numpy as np
 
 from communication.CosmosClient import CosmosClient
+from communication.EmailClient import EmailClient
 
 
 #from pyqtgraph.flowchart import Flowchart, Node
@@ -38,17 +46,17 @@ class Ui_WidgetReport(QWidget):
     self.cosmos_cli = CosmosClient()
     
     #TODO: these should be in the app configuration tool
-    self.sensor_list = [('zone', 'zone1')] #Tuple(sensor_type, sensor_name)
     webhdfs_url = 'http://130.206.80.46:14000/webhdfs/v1'
     auth_url = 'https://130.206.80.46:13000/cosmos-auth/v1'
     local_filepath = os.environ['HOME']+os.sep+'.fresh'+os.sep+'history'
-    username = ''
+    username = 'user@cosmos'
     password = ''
-    cosmos_user = ''
+    cosmos_user = 'user'
     serv = 'fresh'
     servpath = 'fresh'
     #--------------------------
-    
+
+    self.sensor_list = [('zone', 'zone1')] #Tuple(sensor_type, sensor_name)
     self.entity_list = dict()
     
     self.cosmos_cli.username = username
@@ -59,53 +67,147 @@ class Ui_WidgetReport(QWidget):
     self.cosmos_cli.hdfs_filepath = '/'+serv+'_serv/'+servpath+'_servpath/'
     self.cosmos_cli.local_filepath = local_filepath
     
+    self.rep_template = preppy.getModule('reportTemplate.prep')
+    
     self.setupUi(self)
-    
-    
-    
-    
-    #self.helper.connect_file()
-    #self.helper.connect()
-    #self.helper.connect_webhdfs()
-    
-    #self.db_zone1_cols = []
-    #self.db_zone1_rows = []
-    #self.db_zone2_cols = []
-    #self.db_zone2_rows = []
 
   #----------------------------------------------------------------------------
 
   def setupUi(self, WidgetNetMang):
     
-      layout = QGridLayout()
-      self.setLayout(layout)
-
-      #self.axis = MyStringAxis(orientation='bottom')
-      self.axis = DateAxis(orientation='bottom')
-      self.widget_plot = pg.PlotWidget(axisItems={'bottom': self.axis})
-
-      self.combo_zone = QComboBox()
-      for (_, sensor) in self.sensor_list:
-        self.combo_zone.addItem(sensor)
-
-      self.combo_sensor = QComboBox()
-
-      self.button_refresh = QPushButton()
-      self.button_refresh.setText('Refresh')
-      
-      #(QWidget, row, column, rowSpan, columnSpan)
-      layout.addWidget(self.widget_plot, 0, 0, 1, 6)      
-      layout.addWidget(self.combo_zone, 1, 0, 1, 2)
-      layout.addWidget(self.combo_sensor, 1, 2, 1, 2)
-      layout.addWidget(self.button_refresh, 1, 5, 1, 1)
-      
-      
-      self.combo_zone.currentIndexChanged['QString'].\
-        connect(self.handle_combo_zone_changed)
-      self.combo_sensor.currentIndexChanged['QString'].\
-        connect(self.handle_combo_sensor_changed)
-      self.button_refresh.clicked.\
-        connect(self.handle_button_refresh_clicked)
+    #This view contains a stacked widget with two pages
+    
+    #1st page plots the graphic:
+    
+    layout_plot = QGridLayout()
+    self.widget_page_plot = QWidget()
+    self.widget_page_plot.setLayout(layout_plot)    
+    self.axis = DateAxis(orientation='bottom')
+    self.widget_plot = pg.PlotWidget(axisItems={'bottom': self.axis})
+    self.combo_zone = QComboBox()
+    for (_, sensor) in self.sensor_list: self.combo_zone.addItem(sensor)
+    self.combo_sensor = QComboBox()
+    self.button_refresh = QPushButton()
+    self.button_refresh.setText('Refresh')
+    self.button_report = QPushButton()
+    self.button_report.setText('Report')
+    
+    #(QWidget, row, column, rowSpan, columnSpan)
+    layout_plot.addWidget(self.widget_plot, 0, 0, 1, 5)      
+    layout_plot.addWidget(self.combo_zone, 1, 0, 1, 1)
+    layout_plot.addWidget(self.combo_sensor, 1, 1, 1, 1)
+    layout_plot.addWidget(self.button_report, 1, 3, 1, 1)
+    layout_plot.addWidget(self.button_refresh, 1, 4, 1, 1) 
+    
+    #2nd page shows the report form:
+    
+    label_requester_name = QLabel('Name:')
+    label_requester_addr = QLabel('Address:')
+    label_requester_mail = QLabel('Email:')
+    self.edit_requester_name = QLineEdit()
+    self.edit_requester_addr = QTextEdit()
+    self.edit_requester_addr.setMaximumHeight(80)
+    self.edit_requester_mail = QLineEdit()
+    layout_requester = QGridLayout()
+    layout_requester.addWidget(label_requester_name, 0, 0, 1, 1)
+    layout_requester.addWidget(self.edit_requester_name, 0, 1, 4, 1)
+    layout_requester.addWidget(label_requester_addr, 4, 0, 1, 1)
+    layout_requester.addWidget(self.edit_requester_addr, 4, 1, 4, 1)
+    layout_requester.addWidget(label_requester_mail, 8, 0, 1, 1)
+    layout_requester.addWidget(self.edit_requester_mail, 8, 1, 4, 1)
+    group_requester = QGroupBox('Requester')
+    group_requester.setLayout(layout_requester)
+    
+    label_expert_name = QLabel('Name:')
+    label_expert_addr = QLabel('Address:')
+    label_expert_mail = QLabel('Email:')
+    self.edit_expert_name = QLineEdit()
+    self.edit_expert_addr = QTextEdit()
+    self.edit_expert_addr.setMaximumHeight(80)
+    self.edit_expert_mail = QLineEdit()
+    layout_expert = QGridLayout()
+    layout_expert.addWidget(label_expert_name, 0, 0, 1, 1)
+    layout_expert.addWidget(self.edit_expert_name, 0, 1, 4, 1)
+    layout_expert.addWidget(label_expert_addr, 4, 0, 1, 1)
+    layout_expert.addWidget(self.edit_expert_addr, 4, 1, 4, 1)
+    layout_expert.addWidget(label_expert_mail, 8, 0, 1, 1)
+    layout_expert.addWidget(self.edit_expert_mail, 8, 1, 4, 1)
+    group_expert = QGroupBox('Expert')
+    group_expert.setLayout(layout_expert)
+    
+    self.edit_observations = QTextEdit()
+    self.edit_observations.setMaximumHeight(80)
+    layout_observations = QGridLayout()
+    layout_observations.addWidget(self.edit_observations, 0, 0, 1, 1)
+    group_observations = QGroupBox('Observations')
+    group_observations.setLayout(layout_observations)
+    
+    self.label_plot = QLabel()
+    self.label_plot.setFixedSize(700, 300)
+    self.label_plot.setScaledContents(True)
+    layout_group_plot = QGridLayout()
+    layout_group_plot.addWidget(self.label_plot, 0, 0, 1, 1)
+    group_plot = QGroupBox('Plot Preview')
+    group_plot.setLayout(layout_group_plot)
+    
+    vertical_line = QFrame()
+    vertical_line.setFrameShape(QFrame().VLine)
+    vertical_line.setFrameShadow(QFrame().Sunken)
+    
+    layout_frame_form = QGridLayout()
+    layout_frame_form.addWidget(group_requester, 0, 0, 1, 1)
+    layout_frame_form.addWidget(vertical_line, 0, 1, 1, 1)
+    layout_frame_form.addWidget(group_expert, 0, 2, 1, 1)
+    layout_frame_form.addWidget(group_observations, 1, 0, 1, 3)
+    layout_frame_form.addWidget(group_plot, 2, 0, 1, 3)
+    
+    frame_form = QFrame()
+    frame_form.setLayout(layout_frame_form)
+    
+    scroll_area = QScrollArea()
+    scroll_area.setWidget(frame_form)
+    
+    
+    self.button_form_back = QPushButton()
+    self.button_form_save = QPushButton()
+    self.button_form_send = QPushButton()
+    self.button_form_back.setText('Back')
+    self.button_form_save.setText('Save')
+    self.button_form_send.setText('Send')
+    
+    layout_form = QGridLayout()
+    layout_form.addWidget(scroll_area, 0, 0, 1, 5)
+    layout_form.addWidget(self.button_form_back, 1, 0, 1, 1)
+    layout_form.addWidget(self.button_form_save, 1, 3, 1, 1)
+    layout_form.addWidget(self.button_form_send, 1, 4, 1, 1)
+    
+    self.widget_page_form = QWidget()
+    self.widget_page_form.setLayout(layout_form)
+    
+    self.widget_stacked = QStackedWidget(self)
+    self.widget_stacked.addWidget(self.widget_page_plot)
+    self.widget_stacked.addWidget(self.widget_page_form)
+    
+    layout_main = QGridLayout()
+    layout_main.addWidget(self.widget_stacked)
+    self.setLayout(layout_main)
+    
+    #---
+    
+    self.combo_zone.currentIndexChanged['QString'].\
+      connect(self.handle_combo_zone_changed)
+    self.combo_sensor.currentIndexChanged['QString'].\
+      connect(self.handle_combo_sensor_changed)
+    self.button_refresh.clicked.\
+      connect(self.handle_button_refresh_clicked)
+    self.button_report.clicked.\
+      connect(self.handle_button_report_clicked)
+    self.button_form_back.clicked.\
+      connect(self.handle_button_form_back_clicked)
+    self.button_form_save.clicked.\
+      connect(self.handle_button_form_save_clicked)
+    self.button_form_send.clicked.\
+      connect(self.handle_button_form_send_clicked)
   
   #----------------------------------------------------------------------------
   
@@ -232,7 +334,8 @@ class Ui_WidgetReport(QWidget):
           for k in json.loads(s).keys():
             if 'md' not in k and 'recv' not in k and 'RTC' not in k:
               self.entity_list[s_name][k] = ''
-        except:
+        except Exception as e:
+          print e
           pass
     
     self.combo_zone.clear()
@@ -241,22 +344,97 @@ class Ui_WidgetReport(QWidget):
     for e in self.entity_list:
       self.combo_zone.addItem(e)
       "print self.entity_list[e]"
-      
-      
-    
-    
+
     #self.combo_sensor.clear()
     #for e in self.entity_list:
     #  self.combo_sensor.addItem(e)
-      
-      
-      
-      
-      
-      
-    
+
     print "refresh"
     
+  #============================================================================
+
+  @pyqtSlot()
+  def handle_button_report_clicked(self):
+    
+    try:
+      exporter = pyqtgraph.exporters.ImageExporter(self.widget_plot.plotItem)
+      exporter.export(self.cosmos_cli.local_filepath + '/plot.png')
+      self.label_plot.setPixmap(QPixmap(self.cosmos_cli.local_filepath + '/plot.png'))
+    except Exception as e:
+      print e
+      return
+    
+    self.widget_stacked.setCurrentIndex(1)
+
+  #============================================================================
+
+  @pyqtSlot()
+  def handle_button_form_back_clicked(self):
+    
+    self.widget_stacked.setCurrentIndex(0)
+  
+  #============================================================================
+
+  @pyqtSlot()
+  def handle_button_form_save_clicked(self):
+ 
+    rmlText = self.rep_template.get(str(self.combo_zone.currentText())+' - '+
+                                    str(self.combo_sensor.currentText()),
+                                    datetime.datetime.now().strftime("%Y-%m-%d"),
+                                    str(self.edit_requester_name.text()),
+                                    str(self.edit_requester_addr.toPlainText()),
+                                    '',
+                                    str(self.edit_expert_name.text()),
+                                    str(self.edit_expert_addr.toPlainText()),
+                                    '',
+                                    str(self.edit_observations.toPlainText()),
+                                    self.cosmos_cli.local_filepath+'/plot.png')
+    pdf = rml2pdf.parseString(rmlText)
+    
+    filename = QFileDialog().getSaveFileName()
+    
+    if str(filename == ''): return
+    
+    with open(str(filename), 'w+') as pdfFile:
+      pdfFile.write(pdf.read())
+ 
+  #============================================================================
+
+  @pyqtSlot()
+  def handle_button_form_send_clicked(self):
+    
+    rmlText = self.rep_template.get(str(self.combo_zone.currentText())+' - '+
+                                    str(self.combo_sensor.currentText()),
+                                    datetime.datetime.now().strftime("%Y-%m-%d"),
+                                    str(self.edit_requester_name.text()),
+                                    str(self.edit_requester_addr.toPlainText()),
+                                    str(self.edit_requester_mail.text()),
+                                    str(self.edit_expert_name.text()),
+                                    str(self.edit_expert_addr.toPlainText()),
+                                    str(self.edit_expert_mail.text()),
+                                    str(self.edit_observations.toPlainText()),
+                                    self.cosmos_cli.local_filepath+'/plot.png')
+    pdf = rml2pdf.parseString(rmlText)
+    
+    with open(self.cosmos_cli.local_filepath+'/rmlReport.pdf', 'w+') as pdfFile:
+      pdfFile.write(pdf.read())
+    
+    time.sleep(1)
+    
+    (password, ok) = QInputDialog().getText(self, 'password', 'password', mode=QLineEdit.Password)
+    
+    print str(self.edit_requester_mail.text())
+    print str(password)
+    
+    email_cli = EmailClient(username = str(self.edit_requester_mail.text()),
+                            password = str(password))
+    
+    email_cli.sendEmail(from_addr=str(self.edit_requester_mail.text()),
+                        to_addr=str(self.edit_expert_mail.text()),
+                        mail_subject='[FRESH Expert Service] Request for Advice',
+                        mail_body=str(self.edit_observations.toPlainText()),
+                        attachment_path=self.cosmos_cli.local_filepath+'/rmlReport.pdf')
+
 #==============================================================================
 
 class DateAxis(pg.AxisItem):
