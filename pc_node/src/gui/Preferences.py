@@ -616,8 +616,8 @@ class Ui_PreferencesHelper(QtCore.QObject):
           self.parentWidget.le_domain.setText(cfg['domain'])
           self.parentWidget.le_device_port.setText(cfg['device_port'])
           self.parentWidget.le_baudrate.setText(cfg['device_baudrate'])
-          self.parentWidget.cb_auto_connect.setChecked(cfg['auto_connect'])
-          self.parentWidget.cb_auto_open_device.setChecked(cfg['auto_open_device'])
+          self.parentWidget.cb_auto_connect.setChecked((cfg['auto_connect']) in ['true', 'TRUE', '1', 't', 'y', 'yes'])
+          self.parentWidget.cb_auto_open_device.setChecked((cfg['auto_open_device']) in ['true', 'TRUE', '1', 't', 'y', 'yes'])     
           
           self.cfg_loded = True
 
