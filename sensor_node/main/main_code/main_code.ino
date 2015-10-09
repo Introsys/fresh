@@ -464,7 +464,7 @@ void loop()
       lcd.print(msg);
       delay(100);
     }else if(LCD_ON && code != 1){
-      sendAttributeData("OD", "N/A", "Error");  
+      sendAttributeData("PH", "N/A", "Error");  
     }
 
     ptr_data = 0;   
@@ -498,7 +498,7 @@ void loop()
       lcd.print(msg);
       delay(100);
     }else if(LCD_ON && code != 1){
-      sendAttributeData("OD", "N/A", "Error");  
+      sendAttributeData("EC", "N/A", "Error");  
     }
 
     ptr_data = 0; 
@@ -534,7 +534,7 @@ void loop()
       lcd.print(msg);
       delay(100);
     }else if(LCD_ON && code != 1){
-      sendAttributeData("OD", "N/A", "Error");  
+      sendAttributeData("ORP", "N/A", "Error");  
     }
 
     ptr_data = 0;  
