@@ -8,15 +8,10 @@
 # or all the changes made to this document will be lost
 # The Ui file serves only for making the template UI
 
-import resources_rc
-import simplejson as json
-import os
-import sys
+import logging
+from gui import Resources_rc
 from PyQt4 import QtCore, QtGui
-from PyQt4.QtCore import pyqtSlot #@UnusedImport
-from communication.device import Device #@UnusedImport
-from database.database_handler import DatabaseHandler #@UnusedImport
-from database.database_manager import DatabaseManager #@UnusedImport
+from PyQt4.QtCore import pyqtSlot , pyqtSignal, SIGNAL, SLOT, QObject, Qt
 
 
 try:
@@ -35,50 +30,44 @@ except AttributeError:
 
 
 # ----------------------------------------------------------------------------------------------
-#
 class Ui_WidgetNetMang(QtGui.QWidget):
   
-  # ------------------------------------------------------------------
-  #
+  
+  
+  sendAvailableSIM               =  pyqtSignal(object, name="sendAvailableSIM")
+  sendSubscribeSIM               =  pyqtSignal(object, name="sendSubscribeSIM")
+  
+  addSelectedDevicesToSub        =  pyqtSignal(name="addSelectedDevicesToSub")
+  
+  removeSelectedDeviceFromSub    =  pyqtSignal(int, name="removeSelectedDeviceFromSub")
+  editSelectedDeviceFromSub      =  pyqtSignal(int, 'QString', name="editSelectedDeviceFromSub")
+  
+  
+  
   def __init__(self, parent = None):
     ''' '''
     super(Ui_WidgetNetMang, self).__init__()
+    self.f_log = logging.getLogger('App') # this can be called in any place
     self.parentWidget = parent
     self.setupUi(self)
-    self.helper = Ui_WidgetNetMangHelper(self)
-    resources_rc.qInitResources()
+    Resources_rc.qInitResources()
 
-    self.lv_model = QtGui.QStandardItemModel(parent=self.lv_sensors_av)
-    self.lv_sensors_av.setModel(self.lv_model)
+    self.sim_sensors_av = QtGui.QStandardItemModel(parent=self.lv_sensors_av)
+    self.lv_sensors_av.setModel(self.sim_sensors_av)
     
-
-  
-    # ------------------------------------------------------------------
-    # Connects
-
-    QtCore.QObject.connect(self.pb_add, QtCore.SIGNAL("clicked()"), 
-                           self.helper, QtCore.SLOT("addSensor()"))
+    self.sim_sensors_sub = QtGui.QStandardItemModel(self.lv_sensors_sub)
+    self.lv_sensors_sub.setModel(self.sim_sensors_sub)
     
-    QtCore.QObject.connect(self.pb_remove, QtCore.SIGNAL("clicked()"), 
-                           self.helper, QtCore.SLOT("removeSensor()"))
+    QObject.connect(self.lv_sensors_av, SIGNAL('clicked(QModelIndex)'), self, SLOT('availableItemSelected(QModelIndex)'))
+    QObject.connect(self.lv_sensors_sub, SIGNAL('clicked(QModelIndex)'), self, SLOT('subscribedItemSelected(QModelIndex)'))
+    QObject.connect(self.pb_add, SIGNAL("clicked()"), self, SLOT("addButtonClicked()"))
+    QObject.connect(self.pb_remove, SIGNAL("clicked()"), self, SLOT("removeButtonClicked()"))
+    QObject.connect(self.pb_edit, SIGNAL("clicked()"), self, SLOT("editButtonClicked()"))
     
-    QtCore.QObject.connect(self.pb_edit, QtCore.SIGNAL("clicked()"), 
-                           self.helper,  QtCore.SLOT("editSensor()"))
-       
-       
+     
+  # --------------------------------------------------------------------------
+  
     
-    QtCore.QObject.connect(self.lw_sensors_sub, QtCore.SIGNAL("itemClicked(QListWidgetItem *)"), 
-                           self.helper,         QtCore.SLOT("itemSelectedFromList(QListWidgetItem *)"))
-      
-  
-    # handle the dynamic allocation of new sensors to the list
-    QtCore.QObject.connect(self.lv_model, QtCore.SIGNAL("rowsInserted(QModelIndex,int,int)"), self.lockUnlockAddButton)
-    QtCore.QObject.connect(self.lv_model, QtCore.SIGNAL("rowsRemoved(QModelIndex,int,int)"), self.lockUnlockAddButton)
-  
-  
-  # ------------------------------------------------------------------
-  #
-  
   def setupUi(self, WidgetNetMang):
     WidgetNetMang.setObjectName(_fromUtf8("WidgetNetMang"))
     WidgetNetMang.resize(800, 650)
@@ -136,7 +125,7 @@ class Ui_WidgetNetMang(QtGui.QWidget):
     spacerItem1 = QtGui.QSpacerItem(30, 10, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
     self.horizontalLayout_3.addItem(spacerItem1)
     
-    # ----------------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------
     
     # Right Table
     self.verticalLayout_4.addWidget(self.f_menu_add)
@@ -155,10 +144,10 @@ class Ui_WidgetNetMang(QtGui.QWidget):
     self.label_2.setAlignment(QtCore.Qt.AlignCenter)
     self.label_2.setObjectName(_fromUtf8("label_2"))
     self.verticalLayout_3.addWidget(self.label_2)
-    self.lw_sensors_sub = QtGui.QListWidget(self.w_nodes_sub)
-    self.lw_sensors_sub.setFrameShadow(QtGui.QFrame.Plain)
-    self.lw_sensors_sub.setObjectName(_fromUtf8("lw_sensors_sub"))
-    self.verticalLayout_3.addWidget(self.lw_sensors_sub)
+    self.lv_sensors_sub = QtGui.QListView(self.w_nodes_sub)
+    self.lv_sensors_sub.setFrameShadow(QtGui.QFrame.Plain)
+    self.lv_sensors_sub.setObjectName(_fromUtf8("lv_sensors_sub"))
+    self.verticalLayout_3.addWidget(self.lv_sensors_sub)
     
     
     # Right Table Menu
@@ -167,11 +156,13 @@ class Ui_WidgetNetMang(QtGui.QWidget):
     self.f_menu.setMaximumSize(QtCore.QSize(16777215, 40))
     self.f_menu.setFrameShape(QtGui.QFrame.StyledPanel)
     self.f_menu.setObjectName(_fromUtf8("f_menu"))
+    
     self.horizontalLayout_2 = QtGui.QHBoxLayout(self.f_menu)
     self.horizontalLayout_2.setSpacing(5)
     self.horizontalLayout_2.setMargin(5)
     self.horizontalLayout_2.setObjectName(_fromUtf8("horizontalLayout_2"))
     spacerItem2 = QtGui.QSpacerItem(30, 10, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+    
     self.horizontalLayout_2.addItem(spacerItem2)
     
     # ------------------------------------------------------------------
@@ -185,6 +176,7 @@ class Ui_WidgetNetMang(QtGui.QWidget):
     self.pb_edit.setIcon(icon1)
     self.pb_edit.setIconSize(QtCore.QSize(18, 18))
     self.pb_edit.setObjectName(_fromUtf8("pb_edit"))
+    
     self.horizontalLayout_2.addWidget(self.pb_edit)
     spacerItem3 = QtGui.QSpacerItem(20, 20, QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Minimum)
     self.horizontalLayout_2.addItem(spacerItem3)
@@ -208,12 +200,10 @@ class Ui_WidgetNetMang(QtGui.QWidget):
 
     self.retranslateUi(WidgetNetMang)
     QtCore.QMetaObject.connectSlotsByName(WidgetNetMang)
-
-
-  # ------------------------------------------------------------------
-  #
+  # --------------------------------------------------------------------------
   
-  
+
+ 
   def retranslateUi(self, WidgetNetMang):
     WidgetNetMang.setWindowTitle(_translate("WidgetNetMang", "Form", None))
     self.l_sensor_nodes_av.setText(_translate("WidgetNetMang", "Sensor Nodes Available", None))
@@ -221,206 +211,125 @@ class Ui_WidgetNetMang(QtGui.QWidget):
     self.label_2.setText(_translate("WidgetNetMang", "Sensor Nodes Subscribed (History Data)", None))
     self.pb_edit.setText(_translate("WidgetNetMang", "Edit", None))
     self.pb_remove.setText(_translate("WidgetNetMang", "Remove", None))
-
-
-
   # --------------------------------------------------------------------------
   
-  # --------------------------------------------------------------------------
-  # Slots
+  
+  
+  
+  '''
+    Slots
+  '''
     
-  @pyqtSlot("QModelIndex,int,int")
-  def lockUnlockAddButton(self, model_index, arga, argb):
-    ''' unlock the add butto '''
-    if not self.pb_add.isEnabled() and self.lv_model.rowCount() > 0:
+  
+    
+
+  @pyqtSlot(name="lockUnlockAddButton")
+  def lockUnlockAddButton(self):
+    ''' 
+      Lock Unlock the add button 
+    '''
+    if not self.pb_add.isEnabled() and self.sim_sensors_av.rowCount() > 0:
       self.pb_add.setEnabled(True)
-    elif self.pb_add.isEnabled() and self.lv_model.rowCount() < 0:
+    elif self.pb_add.isEnabled() and self.sim_sensors_av.rowCount() < 1:
       self.pb_add.setEnabled(False)
   # --------------------------------------------------------------------------
-
-
   
 
+  @pyqtSlot(name="lockUnlockEditRemoveButton")
+  def lockUnlockEditRemoveButton(self):
+    ''' 
+      Lock Unlock the edit and remove buttons 
+    '''
+    if not self.pb_edit.isEnabled() and not self.pb_remove.isEnabled() and self.sim_sensors_sub.rowCount() > 0:
+      self.pb_edit.setEnabled(True)
+      self.pb_remove.setEnabled(True)
+    elif self.pb_edit.isEnabled() and self.pb_remove.isEnabled() and self.sim_sensors_sub.rowCount() < 1:
+      self.pb_edit.setEnabled(False)
+      self.pb_remove.setEnabled(False)
+
+  # --------------------------------------------------------------------------
 
 
-# ----------------------------------------------------------------------------------------------
-#
-class Ui_WidgetNetMangHelper(QtCore.QObject):
-  ''' '''
+  @pyqtSlot(name="subscribeSIMRequest")
+  def subscribeSIMRequest(self):
+    self.sendSubscribeSIM.emit(self.sim_sensors_sub)
+  # --------------------------------------------------------------------------  
   
-  notifyStatusBar = QtCore.pyqtSignal("QString", name="notifyStatusBar")
+  @pyqtSlot(name="availableSIMRequest")
+  def availableSIMRequest(self):
+    self.sendAvailableSIM.emit(self.sim_sensors_av)
+  # --------------------------------------------------------------------------
 
-  def __init__(self, parent = None):
-    super(Ui_WidgetNetMangHelper, self).__init__()
-    self.parentWidget = parent
-    self.lv_tableMap = dict()
-    self.lw_tableMap = dict()
-    
-    self.databaseManager = DatabaseManager()
-    dbfile = "freshdb"    
-    if not os.path.isfile(dbfile):
-      self.databaseManager.create_database(dbfile)
-      print "new data base created"
-    self.databaseHandler = DatabaseHandler(dbfile)
-  
-    subscriptions = self.databaseHandler.list_devices()
- 
-    if subscriptions:
-      for device in subscriptions:
-        #print "device Description {0}".format(device[4]) # NAME
-        #print "device ID {0}".format(device[1]) # ID
-        
-        item_lw = QtGui.QListWidgetItem(str(device[4]))
-        self.parentWidget.lw_sensors_sub.addItem(item_lw)
-        self.lw_tableMap[item_lw] = device[1]
-      
-  
-    QtCore.QObject.connect(self,                           QtCore.SIGNAL("notifyStatusBar(QString)"), 
-                           self.parentWidget.parentWidget, QtCore.SLOT("updateStatusBarMessages(QString)"))
+
+  @pyqtSlot("QModelIndex", name="availableItemSelected")
+  def availableItemSelected(self):
+    '''
+      Listener for when a item is selected on the available devices list
+    '''
+    self.lockUnlockAddButton()
   # --------------------------------------------------------------------------
   
-  @pyqtSlot()  
-  def addSensor(self):
-    
-    ''' '''
-    items_to_remove = []
-    
+  
+  @pyqtSlot("QModelIndex", name="subscribedItemSelected")
+  def subscribedItemSelected(self):
+    '''
+      Listener for when a item is selected on the subscription devices list
+    '''
+    self.lockUnlockEditRemoveButton()
+  # --------------------------------------------------------------------------
 
-    try:
-      self.parentWidget.lv_sensors_av.setUpdatesEnabled(False)
-      for row in range(self.parentWidget.lv_sensors_av.model().rowCount()):
-          item = self.parentWidget.lv_sensors_av.model().item(row)
-          if item.checkState() == QtCore.Qt.Checked:
-            items_to_remove.append(row)
-      for index in reversed(items_to_remove):
-        item_lv = self.parentWidget.lv_sensors_av.model().item(index)
-        item_lw = QtGui.QListWidgetItem(item_lv.text())
-        device_id = self.lv_tableMap[item_lv]
-        response = self.parentWidget.parentWidget.helper.gateway.cygnus_subscribe(device_id)
-        if response: 
-          json_response = json.loads(response)
-          subscription_id = json_response['subscribeResponse']['subscriptionId']
-          if subscription_id:
-            #print "json_response add sensor {0} {1}".format(json_response, device_id)
-            subscription_timeout = json_response['subscribeResponse']['duration']
-            self.databaseHandler.add_device(device_id, subscription_id, subscription_timeout, device_id, True)
-            self.parentWidget.lw_sensors_sub.addItem(item_lw)
-            self.lw_tableMap[item_lw] = device_id
-            self.parentWidget.lv_sensors_av.model().removeRow(index)
-            self.lv_tableMap.pop(item_lv, None)
-          else:
-            self.notifyStatusBar.emit(QtCore.QString(response))
-          self.parentWidget.lv_sensors_av.setUpdatesEnabled(True)
-        else:
-          self.notifyStatusBar.emit(QtCore.QString("Unable to connect to Server"))
-    except IndexError as e:
-      self.notifyStatusBar.emit(QtCore.QString("Erro: {0}".format(str(e))))
-    except:
-      e = sys.exc_info()[0]
-      self.notifyStatusBar.emit(QtCore.QString("Erro: {0}".format(str(e))))
-      
+
+
+
+
+  @pyqtSlot(name="addButtonClicked")
+  def addButtonClicked(self):
+    ''' 
+      Returns a list of the index selected by the user
+      The user can select more then one sensor node to add
+    '''
+    self.addSelectedDevicesToSub.emit()
+    
+    
+  # --------------------------------------------------------------------------
+
+
+  @pyqtSlot(name="editButtonClicked")
+  def editButtonClicked(self):
+    ''' 
+      Returns the selected element of the list to be edited
+      The user can only select one item at any given time
+    '''
+    if len(self.lv_sensors_sub.selectedIndexes()) > 0:
+      newDescription, result = QtGui.QInputDialog.getText(self.parentWidget, 'Edit Descriptin', 'Please enter a new description:')
+      if result:
+        index = self.lv_sensors_sub.selectedIndexes()[0].row()
+        self.editSelectedDeviceFromSub.emit(index, newDescription)
+    else: 
+      QtGui.QMessageBox.warning(self, "Warning", "Please select one element at least")
       
   # --------------------------------------------------------------------------
 
-  @pyqtSlot(name="removeSensor")
-  def removeSensor(self):
-    ''' '''
-    try:
-      listItem = self.parentWidget.lw_sensors_sub.selectedItems()[0]
-      device_id = self.lw_tableMap[listItem]
-      index = self.parentWidget.lw_sensors_sub.row(listItem)
-      device = self.databaseHandler.get_deivce(device_id)
-      subscriptionId = device[2]
-      #print "\nRemove sensor node: {0} with Subscription Id: {1}".format(device, subscriptionId)
-      response = self.parentWidget.parentWidget.helper.gateway.cygnus_unsubscribe(subscriptionId)
-      if response:
-        json_response = json.loads(response)
-        #print "Json Response {0}".format(json_response)
-        if json_response['statusCode']['code'] == '200':
-          self.parentWidget.lw_sensors_sub.removeItemWidget(listItem)
-          self.parentWidget.lw_sensors_sub.takeItem(index)
-          self.databaseHandler.remove_device(device_id)
-          self.lw_tableMap.pop(listItem, None)
-        else:
-          self.notifyStatusBar.emit(QtCore.QString(response))
-      else:
-        self.notifyStatusBar.emit(QtCore.QString("Unable to connect to Server"))
-        
-      if self.parentWidget.lw_sensors_sub.count() == 0:
-        self.parentWidget.pb_edit.setEnabled(False)
-        self.parentWidget.pb_remove.setEnabled(False)
-        #print len(self.lw_tableMap)
-    except:
-      e = sys.exc_info()[0]
-      self.notifyStatusBar.emit(QtCore.QString("Erro: {0}".format(str(e))))
-      
-  # --------------------------------------------------------------------------
-
-  @pyqtSlot(name="editSensor")
-  def editSensor(self):
-    ''' '''
-    print len(self.lw_tableMap)
     
-    item = self.parentWidget.lw_sensors_sub.selectedItems()[0]
-    device_id = self.lw_tableMap[item]
-         
-    newDescription, ok = QtGui.QInputDialog.getText(self.parentWidget, 'Edit Descriptin', 
-            'Please enter a new description:')
-    if ok:
-      item.setText(newDescription)
-      self.databaseHandler.update_device_description(device_id, str(newDescription))
-
-  # --------------------------------------------------------------------------
-
-  @pyqtSlot("QListWidgetItem*",name="itemSelectedFromList")
-  def itemSelectedFromList(self):
-    ''' '''
-    self.parentWidget.pb_edit.setEnabled(True)
-    self.parentWidget.pb_remove.setEnabled(True)
-
-  # --------------------------------------------------------------------------
-
-  @pyqtSlot(object, name="updateSensorList")
-  def updateSensorList(self, devices):
-    ''' '''
-    for key in devices.keys():
-      device_id = key
-      if not self.databaseHandler.get_deivce(device_id) and not device_id in self.lw_tableMap.values():
-        print "Nao existe device na base de dados nem na lista"
-        if not device_id in self.lv_tableMap.values():
-          print "nao existe device na lista de devices"
-          self.sensorNodeDiscovered(devices[device_id])
-  # --------------------------------------------------------------------------
-
-  @pyqtSlot(object, name="sensorNodeDiscovered")
-  def sensorNodeDiscovered(self, device):
-    '''  '''
-    sensorNode = self.databaseHandler.get_deivce(device.id)
-    if not sensorNode:
-      dump = json.loads(json.dumps(device.element)) # DEBUG
-      zone = dump['id']
-      low = device.id[0:7]
-      high = device.id[8:16] 
     
-      item = QtGui.QStandardItem()
-      item.setText("{0} - {1} {2}".format(zone, low.upper(), high.upper()))
-      item.setEditable(False)
-      item.setCheckable(True)
-      self.parentWidget.lv_model.appendRow(item)
-      self.lv_tableMap[item] = device.id
-    else:
-      print "no device found " # DEBUG
-     
-#     # DEBUG
-#     print "\n"
-#     print device.id
-#     print "elements {0}".format(json.dumps(device.element))
-#     print json.dumps(device.attributes)
-#     print "\n"
-
   # --------------------------------------------------------------------------
   
+  
+  @pyqtSlot(name="removeButtonClicked")
+  def removeButtonClicked(self):
+    ''' 
+      Returns the selected element of the list to be removed
+      The user can only select one item at any given time
+    '''
+    if len(self.lv_sensors_sub.selectedIndexes()) > 0:
+      result = QtGui.QMessageBox.question(self, 'Confirmation', "Delete the selected item?", QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.No)
+      if result == QtGui.QMessageBox.Yes:
+        self.removeSelectedDeviceFromSub.emit(self.lv_sensors_sub.selectedIndexes()[0].row())
+    else: 
+      QtGui.QMessageBox.warning(self, "Warning", "Please select one element at least")
+      
+  # --------------------------------------------------------------------------  
+
     
-    
-    
+  
 #EOF

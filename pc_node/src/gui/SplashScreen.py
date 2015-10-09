@@ -8,7 +8,8 @@
 # The Ui file serves only for making the template UI
 
 
-import resources_rc
+import logging
+from gui import Resources_rc
 from PyQt4 import QtCore, QtGui
 
 try:
@@ -33,8 +34,9 @@ class Ui_WidgetLogo(QtGui.QWidget):
   # --------------------------------------------------------------------------
   def __init__(self):
     super(Ui_WidgetLogo, self).__init__()
+    self.f_log = logging.getLogger('App') # this can be called in any place
     self.setupUi(self)
-    resources_rc.qInitResources()
+    Resources_rc.qInitResources()
   
   # --------------------------------------------------------------------------
   def setupUi(self, WidgetLogo):

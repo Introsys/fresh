@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="/images">
+    <file>default.png</file>
     <file>on.png</file>
     <file>off.png</file>
     <file>reports_color.png</file>

@@ -10,20 +10,25 @@
 # or all the changes made to this document will be lost
 # The Ui file serves only for making the template UI
 
+
+# System imports
 import sys #@UnusedImport
-import resources_rc
 import time
+import Resources_rc
+import logging
+
+# Qt imports
 from PyQt4 import QtCore, QtGui
-from PyQt4.Qt import QWidget, QSizePolicy, pyqtSlot #@UnusedImport
+from PyQt4.Qt import QWidget, QSizePolicy, pyqtSlot, pyqtSignal #@UnusedImport
+
+# Custom Widgets Imports
 from NetworkManagement import Ui_WidgetNetMang
-from Report import Ui_WidgetReport
 from SplashScreen import Ui_WidgetLogo
-from GetDetails import Ui_WidgetViewDetails
+from gui.ViewDetails import Ui_WidgetViewDetails
 from Preferences import Ui_Preferences
-from communication import Gateway, OrionClient #@UnusedImport
-from PyQt4.QtCore import pyqtSignal #@UnusedImport
-from serial.serialposix import baudrate_constants #@UnusedImport
-from mmap import PROT_EXEC #@UnusedImport
+from Report import Ui_WidgetReport
+from PyQt4.Qt import QMessageBox
+from threading import current_thread
 
 
 
@@ -44,86 +49,71 @@ except AttributeError:
 
 
 
-# ----------------------------------------------------------------------------------------------
+
 # Main Class
 class Ui_MainWindow(QtGui.QMainWindow):
 
   # --------------------------------------------------------------------------
-  # Declaration of custom signals for communication with the helper class  
-  openUSBDevice = QtCore.pyqtSignal('QString', # orion_ip
-                                    'QString', # orion_port
-                                    'QString', # username
-                                    'QString', # password
-                                    'QString', # keystone_ip
-                                    'QString', # keystone_port
-                                    'QString', # keystone_url
-                                    'QString', # tennant_name
-                                    'QString', # tennant_id
-                                    'QString', # domain
-                                    'QString', # token_path
-                                    'QString', # device port
-                                    int,       # device baudrate
-                                    name = 'openUSBDevice')
-  
+  # Declaration of custom signals for core with the helper class  
+  openUSBDevice = QtCore.pyqtSignal(name = 'openUSBDevice')
   closeUSBDevice = QtCore.pyqtSignal(name = 'closeUSBDevice')
   connectToServer = QtCore.pyqtSignal(name = 'connectToServer')
   disconnectFromServer = QtCore.pyqtSignal(name ='disconnectFromServer')
   deviceOpened = QtCore.pyqtSignal(bool, name="deviceOpened")
 
+
   # --------------------------------------------------------------------------
-  def __init__(self):
+  def __init__(self, controler = None):
     super(Ui_MainWindow, self).__init__()
-    resources_rc.qInitResources()
+    self.f_log = logging.getLogger('App') # this can be called in any place
+    Resources_rc.qInitResources()
+    self._controler = controler
     self.setupUi(self)
-    self.helper = Ui_MainWindowHelper(self)
-    
     self.device_is_open = False
     self.connected_to_server = False
     self.networkWidgetActive = False
     self.reportsWidgetActive = False
     self.viewdetailsWidgetActive = False
     self.preferencesWidgetActive = False
+    self.setWindowTitle('Fresh - Greenhouse Data Visualizer')
     
     
-    
-    
-    QtCore.QObject.connect(self, QtCore.SIGNAL("openUSBDevice(QString, QString, QString, QString, QString, \
-    QString, QString, QString, QString, QString, QString, QString, int)"), self.helper.connectToDevice)
-    
-    QtCore.QObject.connect(self, QtCore.SIGNAL("closeUSBDevice()"), self.helper.closeConnectionToDevice)
-    QtCore.QObject.connect(self, QtCore.SIGNAL("connectToServer()"), self.helper.connectedToServer)
-    QtCore.QObject.connect(self, QtCore.SIGNAL("disconnectFromServer()"), self.helper.disconnectedFromServer)
-    
-    
+    self.statusbar.showMessage("Welcome to the Fresh Greenhouse Management Application",3000)
+  
+  
   # --------------------------------------------------------------------------
+  
+  
   def setupUi(self, MainWindow):
     ''' This defines the primary layout of the MainWindow '''
     
-    MainWindow.setObjectName(_fromUtf8("MainWindow"))
+    MainWindow.setObjectName(_fromUtf8('MainWindow'))
     MainWindow.resize(800, 600)
     MainWindow.setMinimumSize(QtCore.QSize(400, 400))
     MainWindow.setAnimated(False)
     MainWindow.setDockOptions(QtGui.QMainWindow.AllowTabbedDocks)
     
-    self.centralwidget = QtGui.QWidget(MainWindow)
-    self.centralwidget.setMinimumSize(QtCore.QSize(300, 300))
-    self.centralwidget.setObjectName(_fromUtf8("centralwidget"))
     
-    self.verticalLayout = QtGui.QVBoxLayout(self.centralwidget)
+    self.centralWidget = QtGui.QWidget(MainWindow)
+    self.centralWidget.setMinimumSize(QtCore.QSize(300, 300))
+    self.centralWidget.setObjectName(_fromUtf8('centralWidget'))
+    
+    
+    self.verticalLayout = QtGui.QVBoxLayout(self.centralWidget)
     self.verticalLayout.setSpacing(0)
     self.verticalLayout.setMargin(0)
-    self.verticalLayout.setObjectName(_fromUtf8("verticalLayout"))
+    self.verticalLayout.setObjectName(_fromUtf8('verticalLayout'))
     
     # ------------------------------------------------------------------
     #    
     self.splashWidget = Ui_WidgetLogo()
-    self.splashWidget.setObjectName(_fromUtf8("SplashkWidget"))
+    self.splashWidget.setObjectName(_fromUtf8('splashkWidget'))
     self.verticalLayout.addWidget(self.splashWidget)
     self.splashWidget.setVisible(True)  
          
     # ------------------------------------------------------------------
     #     
-    MainWindow.setCentralWidget(self.centralwidget)
+    MainWindow.setCentralWidget(self.centralWidget)
     self.toolBar = QtGui.QToolBar(MainWindow)
     self.toolBar.setStyleSheet(_fromUtf8("background-color: rgb(0, 0, 0);"))
     self.toolBar.setIconSize(QtCore.QSize(38, 38))
@@ -246,10 +236,6 @@ class Ui_MainWindow(QtGui.QMainWindow):
     self.statusbar.setSizeGripEnabled(False)
     
     
-    self.statusbar.showMessage("Welcome to the Fresh Greenhouse Management Application",3000)
-  
-    
-    
     # ------------------------------------------------------------------
     # 
     self.networkWidget = Ui_WidgetNetMang(MainWindow)
@@ -291,15 +277,21 @@ class Ui_MainWindow(QtGui.QMainWindow):
     self.actionReports.triggered.connect(self.showReportsWidget)
     self.actionViewDetails.triggered.connect(self.showViewDetails)
     self.actionPreferences.triggered.connect(self.showPreferencesWidget)
-    self.actionQuit.triggered.connect(self.close) # Default behavior to quit the App
+   
     self.pb_connect.toggled.connect(self.connectToServerPressed)
     self.pb_open_device.toggled.connect(self.openDevicePressed)
     
-
-   
-      
+    self.actionQuit.triggered.connect(self.close) # Default behavior to quit the App
 
   # --------------------------------------------------------------------------
+  
+      
+  # --------------------------------------------------------------------------
+  # SLOTS
+  # --------------------------------------------------------------------------
+  
+  
+  
   @pyqtSlot(int)
   @pyqtSlot(bool)
   def retranslateUi(self, status):
@@ -311,9 +303,9 @@ class Ui_MainWindow(QtGui.QMainWindow):
     self.actionViewDetails.setText(_translate("MainWindow", "ViewDetails", None))
     self.actionPreferences.setText(_translate("MainWindow", "preferences", None))
     self.actionQuit.setText(_translate("MainWindow", "Quit", None))
-
-
   # --------------------------------------------------------------------------
+
+
   @pyqtSlot(int)
   @pyqtSlot(bool)
   def showNetworkWidget(self, status):
@@ -324,17 +316,16 @@ class Ui_MainWindow(QtGui.QMainWindow):
       self.networkWidget.setVisible(True)
       self.detailsWidget.setVisible(False)
       self.preferencesWidget.setVisible(False)
-      self.reportWidget.setVisible(False)
-      
+      self.reportWidget.setVisible(False)      
           
       #TODO find a better way to do this verification 
       self.networkWidgetActive      = True
       self.reportsWidgetActive      = False
       self.viewdetailsWidgetActive  = False
       self.preferencesWidgetActive   = False
-  
-
   # --------------------------------------------------------------------------
+  
+  
   @pyqtSlot(int)
   @pyqtSlot(bool)
   def showReportsWidget(self, status):
@@ -357,7 +348,6 @@ class Ui_MainWindow(QtGui.QMainWindow):
       self.preferencesWidgetActive   = False
       
 
-  # --------------------------------------------------------------------------
   @pyqtSlot(int)
   @pyqtSlot(bool)
   def showViewDetails(self, status):
@@ -375,9 +365,9 @@ class Ui_MainWindow(QtGui.QMainWindow):
       self.reportsWidgetActive      = False
       self.viewdetailsWidgetActive  = True
       self.preferencesWidgetActive   = False
+  # --------------------------------------------------------------------------    
+  
       
-      
-  # --------------------------------------------------------------------------
   @pyqtSlot(int)
   @pyqtSlot(bool)
   def showPreferencesWidget(self, status):
@@ -395,8 +385,13 @@ class Ui_MainWindow(QtGui.QMainWindow):
       self.reportsWidgetActive      = False
       self.viewdetailsWidgetActive  = False
       self.preferencesWidgetActive   = True
-  
   # --------------------------------------------------------------------------
+  
+  
+  
+  
+  
+  
   @pyqtSlot(int)
   @pyqtSlot(bool)
   def connectToServerPressed(self, status):
@@ -406,42 +401,37 @@ class Ui_MainWindow(QtGui.QMainWindow):
       self.pb_connect.setText("Connecting")
     else:
       self.disconnectFromServer.emit()
-      
-
   # --------------------------------------------------------------------------
+
+  
   @pyqtSlot(int)
   @pyqtSlot(bool)
   def openDevicePressed(self, status):
-    ''' orion_ip, orion_port, username, password, 
-        keystone_ip, keystone_port, keystone_url, 
-        tennant_name, tennant_id, domain, token '''
     if status:
-      self.openUSBDevice.emit(  self.preferencesWidget.le_orion_ip.text(),                # orion_ip
-                                self.preferencesWidget.le_orion_port.text(),             # orion_port
-                                self.preferencesWidget.le_username.text(),                # username
-                                self.preferencesWidget.le_password.text(),                # password
-                                self.preferencesWidget.le_keystone_ip.text(),             # keystone_ip
-                                self.preferencesWidget.le_keystone_port.text(),           # keystone_port
-                                self.preferencesWidget.le_keystone_url.text(),            # keystone_url
-                                self.preferencesWidget.le_tenant_name.text(),             # tennant_name
-                                self.preferencesWidget.le_tenant_id.text(),               # tennant_id
-                                self.preferencesWidget.le_domain.text(),                  # domain
-                                self.preferencesWidget.le_access_token_file_path.text(),  # token_path 
-                                self.preferencesWidget.le_device_port.text(),             # device port
-                                int(self.preferencesWidget.le_baudrate.text())            # device baudrate
-                              )
+      self.openUSBDevice.emit()
       self.pb_open_device.setText("Opening")
     else:
       self.closeUSBDevice.emit()
-
-
   # --------------------------------------------------------------------------
-  @pyqtSlot(str)
+
+
+
+
+
+
+  
+  @pyqtSlot('QString', name='updateStatusBarMessages')
   def updateStatusBarMessages(self, msg):
     ''' '''
     self.statusbar.showMessage(str(msg), 2000)
-
   # --------------------------------------------------------------------------
+  
+  
+  
+  
+  
+  
+  
   @pyqtSlot(int)
   @pyqtSlot(bool)
   def updateDeviceStatus(self, status):
@@ -459,6 +449,8 @@ class Ui_MainWindow(QtGui.QMainWindow):
       self.pb_open_device.setIcon(icon)
       self.pb_open_device.setText("Closed")
       self.deviceOpened.emit(False)
+  # --------------------------------------------------------------------------
+  
   
   @pyqtSlot(int)
   @pyqtSlot(bool)  
@@ -474,97 +466,66 @@ class Ui_MainWindow(QtGui.QMainWindow):
       icon.addPixmap(QtGui.QPixmap(_fromUtf8(":/images/off.png")))
       self.pb_connect.setIcon(icon)
       self.pb_connect.setText("Disconnected")
-    
+  # --------------------------------------------------------------------------
   
   
+  
+  
+  
+  
+  
+  
+  @pyqtSlot("QEvent")
   def closeEvent(self, event):
-    print "closing the application"
+    self.f_log.debug('Closing the application Main Window')
     self.closeUSBDevice.emit()
-    time.sleep(2) # give time to close the comm port if user do not close it
+    self.destroyed.emit(self)
+    time.sleep(1) # give time to close the comm port if user do not close it
     event.accept() # let the window close
+  # --------------------------------------------------------------------------
 
 
-# ----------------------------------------------------------------------------------------------
-# ----------------------------------------------------------------------------------------------
-#
-class Ui_MainWindowHelper(QtCore.QObject):
-  ''' '''
-  
-  
-  updateDeviceStatus = QtCore.pyqtSignal(bool, name ='updateDeviceStatus')
-  updateServerStatus = QtCore.pyqtSignal(bool, name ='updateServerStatus')
-  
-  def __init__(self, parent = None):
-    ''' '''
-    super(Ui_MainWindowHelper, self).__init__()
-    self.parentWidget = parent
+  @pyqtSlot(str, str, name="showMessageDialog")
+  def showMessageDialog(self, msg_type, msg):
     
-    self.device_connected = False;
+    print "showMessageDialog"
     
+    # Warning
+    if msg_type == 'w':
+      print "warning"
+      QMessageBox.warning(self, 
+                          "Warning", 
+                          msg, 
+                          buttons=QMessageBox.Ok, 
+                          defaultButton=QMessageBox.NoButton)
+      
+    # Information
+    elif msg_type == 'i':
+      print "information"
+      QMessageBox.information(self, 
+                              "Info", 
+                              msg, 
+                              buttons=QMessageBox.Ok, 
+                              defaultButton=QMessageBox.NoButton)
+      
+    # Critical
+    elif msg_type == 'c':
+      print "critical"
+      QMessageBox.critical(self, 
+                           "Critical", 
+                           msg, 
+                           buttons=QMessageBox.Ok, 
+                           defaultButton=QMessageBox.NoButton)
     
-    self.gateway = Gateway(self)    
-    QtCore.QObject.connect(self, QtCore.SIGNAL("updateDeviceStatus(bool)"), self.parentWidget.updateDeviceStatus)
-    QtCore.QObject.connect(self, QtCore.SIGNAL("updateServerStatus(bool)"), self.parentWidget.updateDeviceStatus)
-    
-
-  
-    
-  @pyqtSlot()
-  def addDeviceToList(self):
-    ''' '''  
-    
-  
-  @pyqtSlot(str, int)
-  def connectToDevice(self, orion_ip, orion_port, username, password, 
-                        keystone_ip, keystone_port, keystone_url, tennant_name,
-                        tennant_id, domain, token_path , port = '/dev/ttyUSB0', baudrate = 9600):
-    ''' '''
-    self.gateway = Gateway(self)
-    self.gateway.open(orion_ip, orion_port, username, password, 
-                        keystone_ip, keystone_port, keystone_url, tennant_name,
-                        tennant_id, domain, token_path, port, baudrate)
+    # Nothing to do, the type is not correct
+    else: 
+      pass
+      # TODO - something do do here
     
   @pyqtSlot()
-  def closeConnectionToDevice(self):
-    ''' '''
-    self.gateway.close()
+  def testFunction(self):
+    self.f_log.debug("I'm been called from MainWindow {0}".format(current_thread()))
 
-  
-  pyqtSlot(bool)
-  def notifyDeviceStatusToWidget(self, status):
-    ''' '''
-    self.updateDeviceStatus.emit(status)
+  # ----------------------------------------------------------------------------------------------
 
-
-  # ------------------------------------------------------------------------------------------
-
-  @pyqtSlot()
-  def connectedToServer(self):
-    ''' '''
-    # TODO
-
-  @pyqtSlot()
-  def disconnectedFromServer(self):
-    ''' '''
-    # TODO
-
-
-  
-  @pyqtSlot()
-  def notifyServerStatusToWidget(self, status):
-    ''' '''
-    self.updateServerStatus.emit(status)
-
-
-
-  # ------------------------------------------------------------------------------------------
-  @pyqtSlot(QtCore.QString)
-  def notifyNotificationsToWidget(self, msg):
-    ''' '''
-    self.parentWidget.statusbar.showMessage(msg, 2000)
-
-
-    
-
-
-#EOF
+# EOF ------------------------------------------------------------------------------------------------------------

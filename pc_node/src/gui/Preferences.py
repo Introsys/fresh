@@ -8,15 +8,11 @@
 # WARNING! All changes made in this file will be lost!
 
 import sys
-from PyQt4 import QtCore, QtGui
-import resources_rc
-import os.path
-import shutil
 import logging
-import yaml
-import simplejson as json
-from PyQt4.QtCore import QObject, pyqtSlot #@UnusedImport
-from bzrlib.osutils import dirname #@UnusedImport
+from PyQt4 import QtCore, QtGui
+from gui import Resources_rc
+from PyQt4.Qt import pyqtSlot, pyqtSignal 
+from PyQt4.Qt import QRegExp, QRegExpValidator
 
 
 
@@ -37,34 +33,36 @@ except AttributeError:
 
 
 
-
-# ----------------------------------------------------------------------------------------------
-#
 class Ui_Preferences(QtGui.QWidget):
   ''' '''
   # --------------------------------------------------------------------------
-  # Declaration of custom signals for communication with the helper class
-  savePreferencesToFile = QtCore.pyqtSignal() 
-  loadPreferencesFromFile = QtCore.pyqtSignal()
-     
+  # SIGNALS
   # --------------------------------------------------------------------------
+  
+  savePreferences = QtCore.pyqtSignal(object, name="savePreferences") 
+  loadOldPreferences = pyqtSignal(name="loadOldPreferences")
+  loadDefaultPreferences = QtCore.pyqtSignal(name="loadDefaultPreferences")
+  
+       
+  
   def __init__(self, parent = None):
     super(Ui_Preferences, self).__init__()
-    self.__parentWidget = parent
-    self.auth_token = ""
-    resources_rc.qInitResources()
+    self.f_log = logging.getLogger('App') # this can be called in any place
     self.setupUi(self)
-    self.helper = Ui_PreferencesHelper(self)
+    self._parentWidget = parent
     self.token_loded = False
-
-    QtCore.QObject.connect(self.pb_open_file_dialog, QtCore.SIGNAL('clicked()'), self.openAccessTokenFile)
-    QtCore.QObject.connect(self.pb_reset, QtCore.SIGNAL('clicked()'), self.loadPreferences)
-    QtCore.QObject.connect(self.pb_save, QtCore.SIGNAL('clicked()'), self.savePreferences)
-
-  # --------------------------------------------------------------------------
-  def setupUi(self, Preferences):
     
-    # ------------------------------------------------------------------
+    # Connect the Slots to the events of the GUI
+    QtCore.QObject.connect(self.pb_token_file_path_dialog, QtCore.SIGNAL('clicked()'), self.openAccessTokenFile)
+    QtCore.QObject.connect(self.pb_save, QtCore.SIGNAL('clicked()'), self.askToSavePreferences)
+    QtCore.QObject.connect(self.pb_reset, QtCore.SIGNAL('clicked()'), self.askToLoadPreviousPreferences)
+    QtCore.QObject.connect(self.pb_default, QtCore.SIGNAL('clicked()'), self.askToLoadDefaultPreferences)
+       
+  # --------------------------------------------------------------------------
+  
+  
+  def setupUi(self, Preferences):
+    Resources_rc.qInitResources()
     Preferences.setObjectName(_fromUtf8("Preferences"))
     Preferences.resize(600, 500)
     
@@ -85,7 +83,7 @@ class Ui_Preferences(QtGui.QWidget):
     self.tb_preferences.setObjectName(_fromUtf8("tb_preferences"))
     
     
-    # ------------------------------------------------------------------
+    
     # ------------------------------------------------------------------
     # Tab Pane - Network
     self.w_network = QtGui.QWidget()
@@ -97,6 +95,8 @@ class Ui_Preferences(QtGui.QWidget):
     self.w_network.setObjectName(_fromUtf8("w_network"))
     self.gridLayout_2 = QtGui.QGridLayout(self.w_network)
     self.gridLayout_2.setObjectName(_fromUtf8("gridLayout_2"))
+    
+    
     self.l_keystone_url = QtGui.QLabel(self.w_network)
     self.l_keystone_url.setObjectName(_fromUtf8("l_keystone_url"))
     self.gridLayout_2.addWidget(self.l_keystone_url, 0, 0, 1, 1)
@@ -185,8 +185,66 @@ class Ui_Preferences(QtGui.QWidget):
     self.le_orion_port = QtGui.QLineEdit(self.w_network)
     self.le_orion_port.setObjectName(_fromUtf8("le_orion_port"))
     self.gridLayout_2.addWidget(self.le_orion_port, 8, 1, 1, 1)
-     
-  
+
+    # Separator
+    self.line_13 = QtGui.QFrame(self.w_network)
+    sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
+    sizePolicy.setHorizontalStretch(0)
+    sizePolicy.setVerticalStretch(0)
+    sizePolicy.setHeightForWidth(self.line_13.sizePolicy().hasHeightForWidth())
+    self.line_13.setSizePolicy(sizePolicy)
+    self.line_13.setFrameShape(QtGui.QFrame.HLine)
+    self.line_13.setFrameShadow(QtGui.QFrame.Sunken)
+    self.line_13.setObjectName(_fromUtf8("line_13"))
+    self.gridLayout_2.addWidget(self.line_13, 9, 0, 1, 2)
+    
+    # ------------------------------------------------------------------
+    self.l_cosmos_url = QtGui.QLabel(self.w_network)
+    self.l_cosmos_url.setObjectName(_fromUtf8("l_cosmos_url"))
+    self.gridLayout_2.addWidget(self.l_cosmos_url, 10, 0, 1, 1)
+    self.le_cosmos_url = QtGui.QLineEdit(self.w_network)
+    self.le_cosmos_url.setObjectName(_fromUtf8("le_cosmos_url"))
+    self.gridLayout_2.addWidget(self.le_cosmos_url, 10, 1, 1, 1)
+
+    # Separator
+    self.line_14 = QtGui.QFrame(self.w_network)
+    sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
+    sizePolicy.setHorizontalStretch(0)
+    sizePolicy.setVerticalStretch(0)
+    sizePolicy.setHeightForWidth(self.line_14.sizePolicy().hasHeightForWidth())
+    self.line_14.setSizePolicy(sizePolicy)
+    self.line_14.setFrameShape(QtGui.QFrame.HLine)
+    self.line_14.setFrameShadow(QtGui.QFrame.Sunken)
+    self.line_14.setObjectName(_fromUtf8("line_14"))
+    self.gridLayout_2.addWidget(self.line_14, 11, 0, 1, 2)
+    
+    # ------------------------------------------------------------------
+    self.l_cosmos_auth_port = QtGui.QLabel(self.w_network)
+    self.l_cosmos_auth_port.setObjectName(_fromUtf8("l_cosmos_auth_port"))
+    self.gridLayout_2.addWidget(self.l_cosmos_auth_port, 12, 0, 1, 1)
+    self.le_cosmos_auth_port = QtGui.QLineEdit(self.w_network)
+    self.le_cosmos_auth_port.setObjectName(_fromUtf8("le_cosmos_auth_port"))
+    self.gridLayout_2.addWidget(self.le_cosmos_auth_port, 12, 1, 1, 1)
+
+    # Separator
+    self.line_15 = QtGui.QFrame(self.w_network)
+    sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
+    sizePolicy.setHorizontalStretch(0)
+    sizePolicy.setVerticalStretch(0)
+    sizePolicy.setHeightForWidth(self.line_15.sizePolicy().hasHeightForWidth())
+    self.line_15.setSizePolicy(sizePolicy)
+    self.line_15.setFrameShape(QtGui.QFrame.HLine)
+    self.line_15.setFrameShadow(QtGui.QFrame.Sunken)
+    self.line_15.setObjectName(_fromUtf8("line_15"))
+    self.gridLayout_2.addWidget(self.line_15, 13, 0, 1, 2)
+    
+    # ------------------------------------------------------------------
+    self.l_cosmos_webhdfs_port = QtGui.QLabel(self.w_network)
+    self.l_cosmos_webhdfs_port.setObjectName(_fromUtf8("l_cosmos_webhdfs_port"))
+    self.gridLayout_2.addWidget(self.l_cosmos_webhdfs_port, 14, 0, 1, 1)
+    self.le_cosmos_webhdfs_port = QtGui.QLineEdit(self.w_network)
+    self.le_cosmos_webhdfs_port.setObjectName(_fromUtf8("le_cosmos_webhdfs_port"))
+    self.gridLayout_2.addWidget(self.le_cosmos_webhdfs_port, 14, 1, 1, 1)
     
     # Separator
     self.line_05 = QtGui.QFrame(self.w_network)
@@ -198,19 +256,19 @@ class Ui_Preferences(QtGui.QWidget):
     self.line_05.setFrameShape(QtGui.QFrame.HLine)
     self.line_05.setFrameShadow(QtGui.QFrame.Sunken)
     self.line_05.setObjectName(_fromUtf8("line_05"))
-    self.gridLayout_2.addWidget(self.line_05, 9, 0, 1, 2)
+    self.gridLayout_2.addWidget(self.line_05, 15, 0, 1, 2)
     
     # ------------------------------------------------------------------
     self.l_auto_connect = QtGui.QLabel(self.w_network)
     self.l_auto_connect.setObjectName(_fromUtf8("l_auto_connect"))
-    self.gridLayout_2.addWidget(self.l_auto_connect, 10, 0, 1, 1)
+    self.gridLayout_2.addWidget(self.l_auto_connect, 16, 0, 1, 1)
     self.cb_auto_connect = QtGui.QCheckBox(self.w_network)
     self.cb_auto_connect.setObjectName(_fromUtf8("cb_auto_connect"))  
-    self.gridLayout_2.addWidget(self.cb_auto_connect, 10, 1, 1, 1)
+    self.gridLayout_2.addWidget(self.cb_auto_connect, 16, 1, 1, 1)
     
     # Spacer
     spacerItem = QtGui.QSpacerItem(620, 233, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
-    self.gridLayout_2.addItem(spacerItem, 11, 0, 1, 2)
+    self.gridLayout_2.addItem(spacerItem, 17, 0, 1, 2)
     self.tb_preferences.addTab(self.w_network, _fromUtf8(""))
     
     
@@ -296,6 +354,40 @@ class Ui_Preferences(QtGui.QWidget):
     self.gridLayout.addWidget(self.le_tenant_id, 6, 1, 1, 1)
     
     
+    
+    
+    
+    # Separator
+    self.line_16 = QtGui.QFrame(self.w_security)
+    sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
+    sizePolicy.setHorizontalStretch(0)
+    sizePolicy.setVerticalStretch(0)
+    sizePolicy.setHeightForWidth(self.line_16.sizePolicy().hasHeightForWidth())
+    self.line_16.setSizePolicy(sizePolicy)
+    self.line_16.setFrameShape(QtGui.QFrame.HLine)
+    self.line_16.setFrameShadow(QtGui.QFrame.Sunken)
+    self.line_16.setObjectName(_fromUtf8("line_16"))
+    self.gridLayout.addWidget(self.line_16, 7, 0, 1, 2)
+    
+    # ------------------------------------------------------------------
+    self.l_cosmos_user = QtGui.QLabel(self.w_security)
+    self.l_cosmos_user.setObjectName(_fromUtf8("l_cosmos_user"))
+    self.gridLayout.addWidget(self.l_cosmos_user, 8, 0, 1, 1)
+    self.le_cosmos_user = QtGui.QLineEdit(self.w_security)
+    self.le_cosmos_user.setObjectName(_fromUtf8("le_cosmos_user"))
+    self.gridLayout.addWidget(self.le_cosmos_user, 8, 1, 1, 1)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     # Separator
     self.line_09 = QtGui.QFrame(self.w_security)
     sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
@@ -306,15 +398,16 @@ class Ui_Preferences(QtGui.QWidget):
     self.line_09.setFrameShape(QtGui.QFrame.HLine)
     self.line_09.setFrameShadow(QtGui.QFrame.Sunken)
     self.line_09.setObjectName(_fromUtf8("line_09"))
-    self.gridLayout.addWidget(self.line_09, 7, 0, 1, 2)
+    self.gridLayout.addWidget(self.line_09, 9, 0, 1, 2)
     
     # ------------------------------------------------------------------
     self.l_domain = QtGui.QLabel(self.w_security)
     self.l_domain.setObjectName(_fromUtf8("l_domain"))
-    self.gridLayout.addWidget(self.l_domain, 8, 0, 1, 1)
+    self.gridLayout.addWidget(self.l_domain, 10, 0, 1, 1)
     self.le_domain = QtGui.QLineEdit(self.w_security)
     self.le_domain.setObjectName(_fromUtf8("le_domain"))
-    self.gridLayout.addWidget(self.le_domain, 8, 1, 1, 1)
+    self.gridLayout.addWidget(self.le_domain, 10, 1, 1, 1)
+        
     
     # Separator
     self.line_10 = QtGui.QFrame(self.w_security)
@@ -326,15 +419,13 @@ class Ui_Preferences(QtGui.QWidget):
     self.line_10.setFrameShape(QtGui.QFrame.HLine)
     self.line_10.setFrameShadow(QtGui.QFrame.Sunken)
     self.line_10.setObjectName(_fromUtf8("line_10"))
-    self.gridLayout.addWidget(self.line_10, 9, 0, 1, 2)
-    
-    
+    self.gridLayout.addWidget(self.line_10, 11, 0, 1, 2)
     
     # ------------------------------------------------------------------
     # Open Access Token File
     self.l_access_token_path = QtGui.QLabel(self.w_security)
     self.l_access_token_path.setObjectName(_fromUtf8("l_access_token_path"))
-    self.gridLayout.addWidget(self.l_access_token_path, 10, 0, 2, 1)
+    self.gridLayout.addWidget(self.l_access_token_path, 12, 0, 2, 1)
     self.w_open_file = QtGui.QWidget(self.w_security)
     self.w_open_file.setMinimumSize(QtCore.QSize(0, 40))
     self.w_open_file.setObjectName(_fromUtf8("w_open_file"))
@@ -344,30 +435,31 @@ class Ui_Preferences(QtGui.QWidget):
     self.le_access_token_file_path = QtGui.QLineEdit(self.w_open_file)
     self.le_access_token_file_path.setObjectName(_fromUtf8("le_access_token_file_path"))
     self.horizontalLayout_2.addWidget(self.le_access_token_file_path)
-    self.pb_open_file_dialog = QtGui.QPushButton(self.w_open_file)
-    self.pb_open_file_dialog.setText(_fromUtf8(""))
+    self.pb_token_file_path_dialog = QtGui.QPushButton(self.w_open_file)
+    self.pb_token_file_path_dialog.setText(_fromUtf8(""))
     icon = QtGui.QIcon()
     icon.addPixmap(QtGui.QPixmap(_fromUtf8(":/images/open_folder.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-    self.pb_open_file_dialog.setIcon(icon)
-    self.pb_open_file_dialog.setIconSize(QtCore.QSize(19, 19))
-    self.pb_open_file_dialog.setShortcut(_fromUtf8(""))
-    self.pb_open_file_dialog.setObjectName(_fromUtf8("pb_open_file_dialog"))
-    self.horizontalLayout_2.addWidget(self.pb_open_file_dialog)
+    self.pb_token_file_path_dialog.setIcon(icon)
+    self.pb_token_file_path_dialog.setIconSize(QtCore.QSize(19, 19))
+    self.pb_token_file_path_dialog.setShortcut(_fromUtf8(""))
+    self.pb_token_file_path_dialog.setObjectName(_fromUtf8("pb_token_file_path_dialog"))
+    self.horizontalLayout_2.addWidget(self.pb_token_file_path_dialog)
+    self.gridLayout.addWidget(self.w_open_file, 13, 1, 1, 1)
     
-    self.gridLayout.addWidget(self.w_open_file, 11, 1, 1, 1)
     spacerItem1 = QtGui.QSpacerItem(100, 145, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
-    self.gridLayout.addItem(spacerItem1, 12, 0, 1, 2)
+    self.gridLayout.addItem(spacerItem1, 14, 0, 1, 2)
     self.tb_preferences.addTab(self.w_security, _fromUtf8(""))
     
+    # ------------------------------------------------------------------
+    # ------------------------------------------------------------------
+    # ------------------------------------------------------------------
     
-    # ------------------------------------------------------------------
-    # ------------------------------------------------------------------
     # Tab Pane - Device
     self.w_device = QtGui.QWidget()
     sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
     sizePolicy.setHorizontalStretch(0)
     sizePolicy.setVerticalStretch(0)
-    sizePolicy.setHeightForWidth(self.w_security.sizePolicy().hasHeightForWidth())
+    sizePolicy.setHeightForWidth(self.w_device.sizePolicy().hasHeightForWidth())
     self.w_device.setSizePolicy(sizePolicy)
     self.w_device.setObjectName(_fromUtf8("w_device"))
     self.gridLayout = QtGui.QGridLayout(self.w_device)
@@ -434,6 +526,168 @@ class Ui_Preferences(QtGui.QWidget):
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    # ------------------------------------------------------------------
+    # ------------------------------------------------------------------
+    # ------------------------------------------------------------------
+    
+    # Tab Pane - Report
+    self.w_report = QtGui.QWidget()
+    sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+    sizePolicy.setHorizontalStretch(0)
+    sizePolicy.setVerticalStretch(0)
+    sizePolicy.setHeightForWidth(self.w_report.sizePolicy().hasHeightForWidth())
+    self.w_report.setSizePolicy(sizePolicy)
+    
+    self.w_report.setObjectName(_fromUtf8("w_report"))
+    self.gridLayout = QtGui.QGridLayout(self.w_report)
+    self.gridLayout.setObjectName(_fromUtf8("gridLayout"))
+    
+    # ------------------------------------------------------------------
+    self.l_default_expert_name = QtGui.QLabel(self.w_report)
+    self.l_default_expert_name.setObjectName(_fromUtf8("l_default_expert_name"))
+    self.gridLayout.addWidget(self.l_default_expert_name, 0, 0, 1, 1)
+    self.le_default_expert_name = QtGui.QLineEdit(self.w_report)
+    self.le_default_expert_name.setObjectName(_fromUtf8("le_default_expert_name"))
+    self.gridLayout.addWidget(self.le_default_expert_name, 0, 1, 1, 1)
+    
+    # Separator
+    self.line_40 = QtGui.QFrame(self.w_report)
+    sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
+    sizePolicy.setHorizontalStretch(0)
+    sizePolicy.setVerticalStretch(0)
+    sizePolicy.setHeightForWidth(self.line_40.sizePolicy().hasHeightForWidth())
+    self.line_40.setSizePolicy(sizePolicy)
+    self.line_40.setFrameShape(QtGui.QFrame.HLine)
+    self.line_40.setFrameShadow(QtGui.QFrame.Sunken)
+    self.line_40.setObjectName(_fromUtf8("line_40"))
+    self.gridLayout.addWidget(self.line_40, 1, 0, 1, 2)
+    
+    # ------------------------------------------------------------------
+    self.l_default_expert_email = QtGui.QLabel(self.w_report)
+    self.l_default_expert_email.setObjectName(_fromUtf8("l_default_expert_email"))
+    self.gridLayout.addWidget(self.l_default_expert_email, 2, 0, 1, 1)
+    self.le_default_expert_email = QtGui.QLineEdit(self.w_report)
+    self.le_default_expert_email.setEchoMode(QtGui.QLineEdit.Normal)
+    self.le_default_expert_email.setObjectName(_fromUtf8("le_default_expert_email"))
+    self.gridLayout.addWidget(self.le_default_expert_email, 2, 1, 1, 1)    
+    
+
+    # Separator
+    self.line_41 = QtGui.QFrame(self.w_report)
+    sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
+    sizePolicy.setHorizontalStretch(0)
+    sizePolicy.setVerticalStretch(0)
+    sizePolicy.setHeightForWidth(self.line_41.sizePolicy().hasHeightForWidth())
+    self.line_41.setSizePolicy(sizePolicy)
+    self.line_41.setFrameShape(QtGui.QFrame.HLine)
+    self.line_41.setFrameShadow(QtGui.QFrame.Sunken)
+    self.line_41.setObjectName(_fromUtf8("line_41"))
+    self.gridLayout.addWidget(self.line_41, 3, 0, 1, 2)
+
+
+
+    # ------------------------------------------------------------------
+    self.l_default_expert_address = QtGui.QLabel(self.w_report)
+    self.l_default_expert_address.setObjectName(_fromUtf8("l_default_expert_address"))
+    self.gridLayout.addWidget(self.l_default_expert_address, 4, 0, 1, 1)
+    self.te_default_expert_address = QtGui.QTextEdit(self.w_report)
+    self.te_default_expert_address.setObjectName(_fromUtf8("te_default_expert_address"))
+    self.gridLayout.addWidget(self.te_default_expert_address, 4, 1, 1, 1)    
+    
+    
+    # Separator
+    self.line_42 = QtGui.QFrame(self.w_report)
+    sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
+    sizePolicy.setHorizontalStretch(0)
+    sizePolicy.setVerticalStretch(0)
+    sizePolicy.setHeightForWidth(self.line_42.sizePolicy().hasHeightForWidth())
+    self.line_42.setSizePolicy(sizePolicy)
+    self.line_42.setFrameShape(QtGui.QFrame.HLine)
+    self.line_42.setFrameShadow(QtGui.QFrame.Sunken)
+    self.line_42.setObjectName(_fromUtf8("line_42"))
+    self.gridLayout.addWidget(self.line_42, 5, 0, 1, 2)
+
+    
+    
+    
+    # ------------------------------------------------------------------
+    # Open Access Token File
+    self.l_report_template_path = QtGui.QLabel(self.w_report)
+    self.l_report_template_path.setObjectName(_fromUtf8("l_report_template_path"))
+    self.gridLayout.addWidget(self.l_report_template_path, 6, 0, 2, 1)
+    self.w_open_report_file = QtGui.QWidget(self.w_report)
+    self.w_open_report_file.setMinimumSize(QtCore.QSize(0, 40))
+    self.w_open_report_file.setObjectName(_fromUtf8("w_open_report_file"))
+    self.horizontalLayout_2 = QtGui.QHBoxLayout(self.w_open_report_file)
+    self.horizontalLayout_2.setMargin(0)
+    self.horizontalLayout_2.setObjectName(_fromUtf8("horizontalLayout_2"))
+    self.le_report_file_path = QtGui.QLineEdit(self.w_open_report_file)
+    self.le_report_file_path.setObjectName(_fromUtf8("le_report_file_path"))
+    self.horizontalLayout_2.addWidget(self.le_report_file_path)
+    
+    self.pb_template_file_path_dialog = QtGui.QPushButton(self.w_open_report_file)
+    self.pb_template_file_path_dialog.setText(_fromUtf8(""))
+    icon = QtGui.QIcon()
+    icon.addPixmap(QtGui.QPixmap(_fromUtf8(":/images/open_folder.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+    self.pb_template_file_path_dialog.setIcon(icon)
+    self.pb_template_file_path_dialog.setIconSize(QtCore.QSize(19, 19))
+    self.pb_template_file_path_dialog.setShortcut(_fromUtf8(""))
+    self.pb_template_file_path_dialog.setObjectName(_fromUtf8("pb_template_file_path_dialog"))
+    self.horizontalLayout_2.addWidget(self.pb_template_file_path_dialog)
+    self.gridLayout.addWidget(self.w_open_report_file, 6, 1, 1, 1)
+    
+    # Separator
+    self.line_43 = QtGui.QFrame(self.w_report)
+    sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
+    sizePolicy.setHorizontalStretch(0)
+    sizePolicy.setVerticalStretch(0)
+    sizePolicy.setHeightForWidth(self.line_43.sizePolicy().hasHeightForWidth())
+    self.line_43.setSizePolicy(sizePolicy)
+    self.line_43.setFrameShape(QtGui.QFrame.HLine)
+    self.line_43.setFrameShadow(QtGui.QFrame.Sunken)
+    self.line_43.setObjectName(_fromUtf8("line_43"))
+    self.gridLayout.addWidget(self.line_43, 7, 0, 1, 2)
+    
+    
+    
+    spacerItem1 = QtGui.QSpacerItem(100, 145, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
+    self.gridLayout.addItem(spacerItem1, 12, 0, 1, 2)    
+    self.tb_preferences.addTab(self.w_report, _fromUtf8(""))
+    
+    
+    self.verticalLayout.addWidget(self.tb_preferences)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     # ------------------------------------------------------------------
     # Menu
     self.f_menu = QtGui.QFrame(Preferences)
@@ -461,9 +715,9 @@ class Ui_Preferences(QtGui.QWidget):
     # Button Save
     self.pb_save = QtGui.QPushButton(self.f_menu)
     self.pb_save.setMinimumSize(QtCore.QSize(0, 30))
-    icon = QtGui.QIcon()
-    icon.addPixmap(QtGui.QPixmap(_fromUtf8(":/images/save.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-    self.pb_save.setIcon(icon)
+    iconS = QtGui.QIcon()
+    iconS.addPixmap(QtGui.QPixmap(_fromUtf8(":/images/save.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+    self.pb_save.setIcon(iconS)
     self.pb_save.setIconSize(QtCore.QSize(18, 18))
     self.pb_save.setObjectName(_fromUtf8("pb_save"))
     self.horizontalLayout.addWidget(self.pb_save)
@@ -471,12 +725,22 @@ class Ui_Preferences(QtGui.QWidget):
     # Button Undo
     self.pb_reset = QtGui.QPushButton(self.f_menu)
     self.pb_reset.setMinimumSize(QtCore.QSize(0, 30))
-    icon1 = QtGui.QIcon()
-    icon1.addPixmap(QtGui.QPixmap(_fromUtf8(":/images/undo.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-    self.pb_reset.setIcon(icon1)
+    iconU = QtGui.QIcon()
+    iconU.addPixmap(QtGui.QPixmap(_fromUtf8(":/images/undo.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+    self.pb_reset.setIcon(iconU)
     self.pb_reset.setIconSize(QtCore.QSize(18, 18))
     self.pb_reset.setObjectName(_fromUtf8("pb_reset"))
     self.horizontalLayout.addWidget(self.pb_reset)
+    
+    # Button Default
+    self.pb_default = QtGui.QPushButton(self.f_menu)
+    self.pb_default.setMinimumSize(QtCore.QSize(0, 30))
+    iconD = QtGui.QIcon()
+    iconD.addPixmap(QtGui.QPixmap(_fromUtf8(":/images/default.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+    self.pb_default.setIcon(iconD)
+    self.pb_default.setIconSize(QtCore.QSize(18, 18))
+    self.pb_default.setObjectName(_fromUtf8("pb_default"))
+    self.horizontalLayout.addWidget(self.pb_default)
     
     # Menu Spacer - Right 
     spacerItem3 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
@@ -487,23 +751,11 @@ class Ui_Preferences(QtGui.QWidget):
     self.tb_preferences.setCurrentIndex(0) 
     
     
-    # TODO remove this
-    self.le_access_token_file_path.setText("/home/andre/.fresh.token") 
-    
     
     QtCore.QMetaObject.connectSlotsByName(Preferences)
-    
-    # ------------------------------------------------------------------
-    # Connects
-    
-
-    
-    
-    
-    
-
-
   # --------------------------------------------------------------------------
+  
+  
   def retranslateUi(self, Preferences):
     ''' '''
     Preferences.setWindowTitle(_translate("Preferences", "Preferences", None))
@@ -512,33 +764,43 @@ class Ui_Preferences(QtGui.QWidget):
     self.l_keystone_port.setText(_translate("Preferences", "KeyStone Port", None))
     self.l_orion_ip.setText(_translate("Preferences", "Orion IP", None))
     self.l_orion_port.setText(_translate("Preferences", "Orion Port", None))
+    self.l_cosmos_url.setText(_translate("Preferences", "Cosmos IP", None))
+    self.l_cosmos_auth_port.setText(_translate("Preferences", "Cosmos Auth port", None))
+    self.l_cosmos_webhdfs_port.setText(_translate("Preferences", "Cosmos Web HDFS port", None))
     self.tb_preferences.setTabText(self.tb_preferences.indexOf(self.w_network), _translate("Preferences", "Network", None))
     self.l_username.setText(_translate("Preferences", "Username", None))
     self.l_password.setText(_translate("Preferences", "Password", None))
     self.l_tennant_name.setText(_translate("Preferences", "Tenant Name", None))
     self.l_tennant_id.setText(_translate("Preferences", "Tenant ID", None))
+    self.l_cosmos_user.setText(_translate("Preferences", "Cosmos User", None))
     self.l_domain.setText(_translate("Preferences", "Domain", None))
     self.l_access_token_path.setText(_translate("Preferences", "Access Token Path", None))
     self.tb_preferences.setTabText(self.tb_preferences.indexOf(self.w_security), _translate("Preferences", "Security", None))
     self.pb_save.setText(_translate("Preferences", "Save", None))
     self.pb_reset.setText(_translate("Preferences", "Reset", None))
+    self.pb_default.setText(_translate("Preferences", "Default", None))
     self.l_username.setText(_translate("Preferences", "Username", None))
     self.tb_preferences.setTabText(self.tb_preferences.indexOf(self.w_device), _translate("Preferences", "Device", None))
     self.l_device_port.setText(_translate("Preferences", "Device Port", None))
     self.l_baudrate.setText(_translate("Preferences", "Device Baudrate", None))
     self.l_auto_connect.setText(_translate("Preferences", "Auto Connect to Server", None))
     self.l_auto_open_device.setText(_translate("Preferences", "Auto Open Device", None))
-  
-  
+    self.tb_preferences.setTabText(self.tb_preferences.indexOf(self.w_report), _translate("Preferences", "Reports", None))
+    self.l_default_expert_address.setText(_translate("Preferences", "Expert Default Address", None))
+    self.l_default_expert_email.setText(_translate("Preferences", "Expert Default Email", None))
+    self.l_default_expert_name.setText(_translate("Preferences", "Expert Default Name", None))
+    self.l_report_template_path.setText(_translate("Preferences", "Report Template Path", None))
+    
   # --------------------------------------------------------------------------
-  def getToken(self):
-    return str(self.auth_token) # this cast is needed since the token is a json object = dict
-
   
+
+
   # --------------------------------------------------------------------------
   # Slots
-  
   # --------------------------------------------------------------------------
+  
+  
+  @pyqtSlot()  
   def openAccessTokenFile(self):
     ''' '''
     try:
@@ -548,182 +810,103 @@ class Ui_Preferences(QtGui.QWidget):
         
     except:
       print "Error", sys.exc_info()[0] # DEBUG
-      #raise
+      raise
+  # --------------------------------------------------------------------------
   
   
-  @pyqtSlot()
-  def loadPreferences(self):
-    ''' '''
-    reply = QtGui.QMessageBox.question(self, 'Message',
-    "Are you sure you want to load old preferences?", QtGui.QMessageBox.No | 
-    QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
-
-    if reply == QtGui.QMessageBox.Yes:
-      self.loadPreferencesFromFile.emit()
-    else:
-      pass    
-  
-    
-  @pyqtSlot()
-  def savePreferences(self):
+  @pyqtSlot(name="askToSavePref")
+  def askToSavePreferences(self):
     ''' '''
     reply = QtGui.QMessageBox.question(self, 'Message',
     "Are you sure you want to save the preferences?", QtGui.QMessageBox.No | 
     QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
 
     if reply == QtGui.QMessageBox.Yes:
-      self.savePreferencesToFile.emit()
-    else:
-      pass
-    
-
-
-
-class Ui_PreferencesHelper(QtCore.QObject):
-  ''' '''
-  def __init__(self, parent = None):
-    ''' '''
-    super(Ui_PreferencesHelper, self).__init__()
-    self.parentWidget = parent
-    self.o_log = logging.getLogger('orion')
-    self.cfg_loded = False
-    self.token_loded = False
-    self.token_file = self.parentWidget.le_access_token_file_path.text()
-    self.cfg_file = ".fresh.cfg" # .fresh.cfg is the default file
-    self.cfg_file_backup = ".fresh.cfg.bak"
-    
-    
-    self.connect(self.parentWidget, QtCore.SIGNAL("savePreferencesToFile()"), self.savePreferencesToFile)
-    self.connect(self.parentWidget, QtCore.SIGNAL("loadPreferencesFromFile()"), self.loadPreferencesFromBackup)
-    
-    try:
-      # Load config file
-      mode = 'r' if os.path.exists(self.cfg_file) else'w'
-      with open(self.cfg_file, mode) as cfg_content:
-        cfg = yaml.load(cfg_content)
-        if not cfg:        
-          self.o_log.error('Configuration file is empty!')
-        else:
-          self.parentWidget.le_orion_ip.setText(cfg['orion_ip'])
-          self.parentWidget.le_orion_port.setText(cfg['orion_port'])
-          self.parentWidget.le_username.setText(cfg['username'])
-          self.parentWidget.le_password.setText(cfg['password'])
-          self.parentWidget.le_keystone_ip.setText(cfg['keystone_ip'])
-          self.parentWidget.le_keystone_port.setText(cfg['keystone_port'])
-          self.parentWidget.le_keystone_url.setText(cfg['keystone_url'])
-          self.parentWidget.le_tenant_id.setText(cfg['tenant_name'])
-          self.parentWidget.le_tenant_name.setText(cfg['tenant_id'])
-          self.parentWidget.le_domain.setText(cfg['domain'])
-          self.parentWidget.le_device_port.setText(cfg['device_port'])
-          self.parentWidget.le_baudrate.setText(cfg['device_baudrate'])
-          self.parentWidget.cb_auto_connect.setChecked((cfg['auto_connect']) in ['true', 'TRUE', '1', 't', 'y', 'yes'])
-          self.parentWidget.cb_auto_open_device.setChecked((cfg['auto_open_device']) in ['true', 'TRUE', '1', 't', 'y', 'yes'])     
-          
-          self.cfg_loded = True
-
-      # -------------------------------------------------------
-      
-      # Load token if exists already
-      mode = 'r' if os.path.exists(self.token_file) else 'w'
-      with open(self.token_file, mode) as token_content:
-          content = token_content.read()
-          if not content:
-            self.o_log.error('Token file is empty!')
-            self.parentWidget.auth_token = None
-            self.parentWidget.token_loded = False;
-            self.token_loded = False
-          else:
-            self.auth_ref = json.loads(content)
-            self.parentWidget.auth_token = self.auth_ref 
-            self.o_log.info('Token was loded with success')
-            self.parentWidget.token_loded = True 
-            self.token_loded = True  
-      
-      # -------------------------------------------------------
-  
-    except IOError as e:
-      print 'I/O error({0}): {1}'.format(e.errno, e.strerror)
-    except KeyError as e:
-      print 'The configuration file is missing the {0} field.'.format(str(e))
-    except IndexError as e:
-      print 'Error {0}'.format(str(e))
-    except: # catch *all* exceptions
-      e = sys.exc_info()[0]
-      print e
-      #raise
-    
+      preferences = PreferecesDict(self.le_orion_ip.text(), 
+                                   self.le_orion_port.text(), 
+                                   self.le_username.text(), 
+                                   self.le_password.text(), 
+                                   self.le_keystone_ip.text(), 
+                                   self.le_keystone_port.text(), 
+                                   self.le_keystone_url.text(), 
+                                   self.le_tenant_id.text(), 
+                                   self.le_tenant_name.text(), 
+                                   self.le_domain.text(), 
+                                   self.le_device_port.text(), 
+                                   self.le_baudrate.text(),
+                                   self.le_access_token_file_path.text())
+      self.savePreferences.emit(preferences)
   # --------------------------------------------------------------------------
-  # Slots
-  @pyqtSlot()
-  def savePreferencesToFile(self):
+  
+  
+  @pyqtSlot(name="askToLoadPreviousPreferences")
+  def askToLoadPreviousPreferences(self):
     ''' '''
-    
-    try:
-      shutil.copy(self.cfg_file, self.cfg_file_backup)
-      self.cfg = None
-      with open(self.cfg_file, 'r') as cfg_content:
-        self.cfg = yaml.load(cfg_content)
-        if not self.cfg:        
-          self.o_log.error('Problems with the file!')
-        else:
-          self.cfg['orion_ip'] = str(self.parentWidget.le_orion_ip.text())
-          self.cfg['orion_port'] = str(self.parentWidget.le_orion_port.text())
-          self.cfg['username'] = str(self.parentWidget.le_username.text())
-          self.cfg['password'] = str(self.parentWidget.le_password.text())
-          self.cfg['keystone_ip'] = str(self.parentWidget.le_keystone_ip.text())
-          self.cfg['keystone_port'] = str(self.parentWidget.le_keystone_port.text())
-          self.cfg['keystone_url'] = str(self.parentWidget.le_keystone_url.text())
-          self.cfg['tenant_name'] = str(self.parentWidget.le_tenant_name.text())
-          self.cfg['tenant_id'] = str(self.parentWidget.le_tenant_id.text())
-          self.cfg['domain'] = str(self.parentWidget.le_domain.text())
-          self.cfg['device_port'] = str(self.parentWidget.le_device_port.text())
-          self.cfg['device_baudrate'] = str(self.parentWidget.le_baudrate.text())
-          self.cfg['auto_connect'] = self.parentWidget.cb_auto_connect.isChecked()
-          self.cfg['auto_open_device'] = self.parentWidget.cb_auto_open_device.isChecked()
-            
-        with open(self.cfg_file, 'w') as cfg_content:
-          yaml.safe_dump(self.cfg, cfg_content, default_flow_style=False, allow_unicode=True)
-    except IOError as e:
-      print "Error {0}".format(e.strerror) # DEBUG
-    except e:
-      print "Erro {0}".format(str(e)) # Just in case
-      #raise
-     
-  @pyqtSlot()
-  def loadPreferencesFromBackup(self):
-    ''' '''
-    
-    try:
-      # Load config file
-      mode = 'r' if os.path.exists(self.token_file) else 'w'
-      with open(self.cfg_file_backup, mode) as cfg_content:
-        cfg = yaml.load(cfg_content)
-        if not cfg:        
-          self.o_log.error('Backup Configuration file is empty!')
-        else:
-          self.parentWidget.le_orion_ip.setText(cfg['orion_ip'])
-          self.parentWidget.le_orion_port.setText(cfg['orion_port'])
-          self.parentWidget.le_username.setText(cfg['username'])
-          self.parentWidget.le_password.setText(cfg['password'])
-          self.parentWidget.le_keystone_ip.setText(cfg['keystone_ip'])
-          self.parentWidget.le_keystone_port.setText(cfg['keystone_port'])
-          self.parentWidget.le_keystone_url.setText(cfg['keystone_url'])
-          self.parentWidget.le_tenant_id.setText(cfg['tenant_name'])
-          self.parentWidget.le_tenant_name.setText(cfg['tenant_id'])
-          self.parentWidget.le_domain.setText(cfg['domain'])
-          self.parentWidget.le_device_port.setText(cfg['device_port'])
-          self.parentWidget.le_baudrate.setText(cfg['device_baudrate'])
-          self.parentWidget.cb_auto_connect.setChecked(cfg['auto_connect'])
-          self.parentWidget.cb_auto_open_device.setChecked(cfg['auto_open_device'])
-          
-          self.cfg_loded = True
-    
-    except IOError as e:
-      print "Error {0}".format(e.strerror) # DEBUG
-      
-    except e:
-      print "Erro {0}".format(str(e)) # Just in case
-      #raise
-     
+    reply = QtGui.QMessageBox.question(self, 'Message',
+    "Are you sure you want to load old preferences?", QtGui.QMessageBox.No | 
+    QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
 
+    if reply == QtGui.QMessageBox.Yes:
+      self.loadOldPreferences.emit()    
+  # --------------------------------------------------------------------------    
+  
+  
+  @pyqtSlot(name="askToLoadDefaultPreferences")
+  def askToLoadDefaultPreferences(self):
+    ''' '''
+    reply = QtGui.QMessageBox.question(self, 'Message',
+    "Are you sure you want to load the defualt preferences?", QtGui.QMessageBox.No | 
+    QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
+
+    if reply == QtGui.QMessageBox.Yes:
+      self.loadDefaultPreferences.emit()
+  # --------------------------------------------------------------------------  
+    
+      
+  @pyqtSlot(object, name="displayChangedPreferences")
+  def displayChangedPreferences(self, preferences):
+    
+    self.le_orion_ip.setText(preferences.orionIp)
+    self.le_orion_port.setText(preferences.orionPort)
+    self.le_username.setText(preferences.username)
+    self.le_password.setText(preferences.password)
+    self.le_keystone_ip.setText(preferences.keystoneIp)
+    self.le_keystone_port.setText(preferences.keystonePort)
+    self.le_keystone_url.setText(preferences.keystoneUrl)
+    self.le_tenant_id.setText(preferences.tenantId)
+    self.le_tenant_name.setText(preferences.tenantName)
+    self.le_domain.setText(preferences.domain)
+    self.le_device_port.setText(preferences.devicePort)
+    self.le_baudrate.setText(preferences.baudrate)
+    self.cb_auto_connect.setChecked(0)
+    self.cb_auto_open_device.setChecked(0)    
+  # --------------------------------------------------------------------------
+
+    
+# ----------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
+
+
+class PreferecesDict():
+  ''' '''
+  def __init__(self, orion_ip="", orion_port="", username="", password="", keystone_ip="", keystone_port="",\
+                keystone_url="", tenant_id="", tenant_name="", domain="", device_port="", baudrate="",\
+                token_path=""):  
+    self.orionIp = orion_ip
+    self.orionPort = orion_port
+    self.username = username
+    self.password = password
+    self.keystoneIp = keystone_ip
+    self.keystonePort = keystone_port
+    self.keystoneUrl = keystone_url
+    self.tenantId = tenant_id
+    self.tenantName = tenant_name
+    self.domain = domain
+    self.devicePort = device_port
+    self.baudrate = baudrate
+    self.tokenPath = token_path
+  # --------------------------------------------------------------------------
+  
+# ----------------------------------------------------------------------------------------------
 #EOF

@@ -49,11 +49,11 @@ class Ui_WidgetReport(QWidget):
     webhdfs_url = 'http://130.206.80.46:14000/webhdfs/v1'
     auth_url = 'https://130.206.80.46:13000/cosmos-auth/v1'
     local_filepath = os.environ['HOME']+os.sep+'.fresh'+os.sep+'history'
-    username = 'NA'
-    password = 'NA'
-    cosmos_user = 'NA'
-    serv = 'NA'
-    servpath = 'NA'
+    username = 'andre.silva@introsys.eu'
+    password = 'andr=#fi0'
+    cosmos_user = 'andre.silva'
+    serv = 'fresh'
+    servpath = 'fresh'
     #--------------------------
     
     #Tuple(sensor_type, sensor_name)
