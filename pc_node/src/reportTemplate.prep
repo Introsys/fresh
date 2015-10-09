@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8" standalone="no" ?>
+
+{{def(sensor, date, requester_name, requester_address, requester_contact, expert_name, expert_address, expert_contact, observations, plot)}}
+
+<!DOCTYPE document SYSTEM "rml.dtd">
+
+<document filename="reportTemplate.prep">
+    
+    <!-- Don't remove any of the following main blocks, -->
+    <!-- otherwise the document will not compile. -->
+    <template pageSize="(595, 842)" leftMargin="72" showBoundary="0">
+	    <!-- First page - Logo, client information and advice request -->        
+	    <pageTemplate id="main">
+            <pageGraphics >
+                <setFont name="Helvetica-Bold" size="18"/>
+                <drawString x="1.5cm" y="770">{{sensor}} Report from {{date}}</drawString>
+                <image file="fresh_logo.png" preserveAspectRatio="1" x="400" y="760" width="120" height="120"/>
+                <lineMode width="0.1"/>
+                <fill color="#333333"/>
+                <lines>1.5cm 26cm 19.5cm 26cm</lines>
+                <spacer length="1cm" />
+                <lineMode width="0.1"/>
+                <fill color="#333333"/>
+                <lines>1.5cm 2cm 19.5cm 2cm</lines>
+                <setFont name="Helvetica" size="9"/>
+                <drawCentredString x="10.5cm" y="1.5cm">- <pageNumber/> -</drawCentredString>
+            </pageGraphics>
+            <frame id="content" x1="1.5cm" y1="2cm" width="18cm" height="23cm" />
+        </pageTemplate>
+	    <!-- Second Page - Table and Graphics -->
+        <pageTemplate id="contentPage" pageSize="(595,842)">
+            <pageGraphics>
+                <lineMode width="0.1"/>
+                <fill color="#333333"/>
+                <lines>1.5cm 27cm 19.5cm 27cm</lines>
+                <fill color="#333333"/>
+                <setFont name="Helvetica" size="8"/>
+                <drawString x="1.5cm" y="27.1cm">{{sensor}} Report</drawString>
+                <drawCenteredString x="18.7cm" y="27.1cm">{{date}}</drawCenteredString>
+                <fill color="#ff0000"/>       
+                <lineMode width="0.1"/>
+                <fill color="#333333"/>
+                <lines>1.5cm 2cm 19.5cm 2cm</lines>
+                <setFont name="Helvetica" size="9"/>
+                <drawCentredString x="10.5cm" y="1.5cm">- <pageNumber/> -</drawCentredString>
+            </pageGraphics>
+            <frame id="content" x1="1.5cm" y1="2cm" width="18cm" height="24cm" />
+        </pageTemplate>
+    </template>
+
+
+    <!-- Document stylesheet -->
+    <!-- Conatins the style information for the document. -->
+    <stylesheet>
+        <blockTableStyle id="headerTable">
+            <blockAlignment value="left"/>
+            <blockFont name="Helvetica"/>
+            <blockBottomPadding length="0"/>
+            <blockTopPadding length="0"/>
+            <blockLeftPadding length="0"/>
+            <blockRightPadding length="5"/>
+        </blockTableStyle>
+        <blockTableStyle id="dataTable">
+            <blockValign value="TOP" />
+            <blockAlign value="LEFT" />
+            <blockTopPadding length="2" />
+            <blockBottomPadding length="2" />
+            <blockLeftPadding length="3" />
+            <blockRightPadding length="3" />
+            <lineStyle kind="LINEBELOW" colorName="silver" start="0,1" stop="-1,-2" />
+            <lineStyle kind="LINEAFTER" colorName="silver" start="0,1" stop="-2,-1" />
+            <blockFont name="Helvetica" size="9" start="0,1" stop="-1,-1" />
+            <blockTopPadding length="3" start="0,0" stop="-1,0" />
+            <blockBottomPadding length="3" start="0,0" stop="-1,0" />
+            <blockLeftPadding length="7" start="0,0" stop="-1,0" />
+            <blockRightPadding length="7" start="0,0" stop="-1,0" />
+            <blockFont name="Helvetica-Bold" size="11" start="0,0" stop="-1,0" />
+            <blockTextColor colorName="white" start="0,0" stop="-1,0" />
+            <blockBackground colorName="#3b5b86" start="0,0" stop="-1,0" />
+        </blockTableStyle>
+        <paraStyle 
+            name="style.centered"
+            fontName="Helvetica"
+            fontSize="8"
+            alignment="left" />
+    </stylesheet>
+
+
+    <!-- File dynamic contents -->
+    <!-- Contains all flowable elements of the document. -->
+    <!-- They fill up the frames defined in the template section. -->
+    <story>
+        <blockTable style="headerTable" colWidths="2cm, 80%, 2cm, 80%">
+            <tr>
+                <td><h5>Requester</h5></td><td></td>
+                <td><h5>Expert</h5></td><td></td>
+            </tr>
+            <tr>
+                <td>Name:</td><td><para alignment="left">{{requester_name}}</para></td>
+                <td>Name:</td><td><para alignment="left">{{expert_name}}</para></td>
+            </tr>
+            <tr>
+                <td>Address:</td><td><para alignment="left">{{requester_address}}</para></td>
+                <td>Address:</td><td><para alignment="left">{{expert_address}}</para></td>
+            </tr>
+            <tr>
+                <td>Contact:</td><td><para alignment="left">{{requester_contact}}</para></td>
+                <td>Contact:</td><td><para alignment="left">{{expert_contact}}</para></td>
+            </tr>
+        </blockTable>
+        <spacer length="1cm" />
+        <h5> Observations</h5>
+	    <para>{{observations}}</para>
+        <spacer length="1cm" />
+        
+        <h5 alignment="center">Graphics plot of the sensor data</h5>
+
+
+        <spacer length="1cm" />
+
+
+ 	   <!-- <para> Sensor {{sensor}} data</para> -->
+
+	    <!-- The <illustration> tag below defines a box (with a border turned -->
+	    <!-- on, for visibility) inside which an image is placed. -->
+
+     	<blockTable align="center">
+            <tr>
+                <td align="center">
+                    <illustration width="300" height="300" style="ilus" align="center">
+                        <image file="{{plot}}" x="0" y="0" width="300" height="300" showBoundary="yes" preserveAspectRatio="yes" pdfBoxType="MediaBox" />
+                    </illustration>
+	            </td>
+	        </tr>
+        </blockTable>
+    </story>
+</document>
