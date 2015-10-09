@@ -1,0 +1,19 @@
+version_code, version_name, codename
+2.1, Ubuntu 4.10, Warty Warthog
+2.2, Ubuntu 5.04, Hoary Hedgehog
+2.3, Ubuntu 5.10, Breezy Badger
+2.4, Ubuntu 6.06 LTS, Dapper Drake
+2.5, Ubuntu 6.10, Edgy Eft
+2.6, Ubuntu 7.04, Feisty Fawn
+2.7, Ubuntu 7.10, Gutsy Gibbon
+2.8, Ubuntu 8.04 LTS, Hardy Heron
+2.9, Ubuntu 8.10, Intrepid Ibex
+2.10, Ubuntu 9.04, Jaunty Jackalope
+2.11, Ubuntu 9.10, Karmic Koala
+2.12, Ubuntu 10.04 LTS, Lucid Lynx
+2.13, Ubuntu 10.10, Maverick Meerkat
+2.14, Ubuntu 11.04, Natty Narwhal
+2.15, Ubuntu 11.10, Oneiric Ocelot
+2.16, Ubuntu 12.04 LTS, Precise Pangolin
+2.17, Ubuntu 12.10, Quantal Quetzal
+2.18, Ubuntu 13.04, Raring Ringtail

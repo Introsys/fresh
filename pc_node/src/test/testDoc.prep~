@@ -4,7 +4,7 @@
 
 <!DOCTYPE document SYSTEM "rml.dtd">
 
-<document filename="reportTemplate.prep">
+<document filename="testDoc.prep">
     
     <!-- Don't remove any of the following main blocks, -->
     <!-- otherwise the document will not compile. -->
@@ -133,5 +133,12 @@
 	            </td>
 	        </tr>
         </blockTable>
+
+             
+
+
+
+
+
     </story>
 </document>

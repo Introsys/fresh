@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="utf-8" standalone="no" ?>
+
+{{def(date, name, website, email, table)}}
+
+<!DOCTYPE document SYSTEM "rml.dtd">
+<document>
+    <!-- Don't remove any of the following main blocks, -->
+    <!-- otherwise the document will not compile. -->
+    <template>
+
+	<!-- First page - Logo, client information and advice request -->        
+	<pageTemplate id="main">
+            <pageGraphics>
+                <fill color="#3b5b86"/>
+                <rect x="1.5cm" y="26cm" height="2cm" width="18cm" stroke="0" fill="1"/>
+                <fill color="#ffffff"/>
+                <setFont name="Helvetica-Bold" size="18"/>
+                <drawCenteredString x="10.5cm" y="27cm">Fresh Report</drawCenteredString>
+                <setFont name="Helvetica" size="12"/>
+                <drawCenteredString x="10.5cm" y="26.5cm">{{website}}</drawCenteredString>
+                
+                <fill color="#3b5b86"/>
+                <setFont name="Helvetica-Bold" size="8"/>
+                <drawCenteredString x="10.5cm" y="25.5cm">{{date}}</drawCenteredString>
+                
+                
+                <lineMode width="0.1"/>
+                <fill color="#333333"/>
+                <lines>1.5cm 2cm 19.5cm 2cm</lines>
+                <setFont name="Helvetica" size="9"/>
+
+
+                <drawCentredString x="10.5cm" y="1.5cm">- <pageNumber/> -</drawCentredString>
+            </pageGraphics>
+    
+            <frame id="content" x1="1.5cm" y1="2cm" width="18cm" height="23cm" />
+        </pageTemplate>
+        
+	<!-- Second Page - Table and Graphics -->
+        <pageTemplate id="contentPage">
+            <pageGraphics>
+                <lineMode width="0.1"/>
+                <fill color="#333333"/>
+                <lines>1.5cm 27cm 19.5cm 27cm</lines>
+                
+                <fill color="#333333"/>
+                <setFont name="Helvetica" size="8"/>
+                <drawString x="1.5cm" y="27.1cm">Avedo's Report ({{website}})</drawString>
+                <drawCenteredString x="18.7cm" y="27.1cm">{{date}}</drawCenteredString>
+
+
+                <fill color="#ff0000"/>
+
+                
+                <lineMode width="0.1"/>
+                <fill color="#333333"/>
+                <lines>1.5cm 2cm 19.5cm 2cm</lines>
+                <setFont name="Helvetica" size="9"/>
+
+                <drawCentredString x="10.5cm" y="1.5cm">- <pageNumber/> -</drawCentredString>
+            </pageGraphics>
+    
+            <frame id="content" x1="1.5cm" y1="2cm" width="18cm" height="24cm" />
+        </pageTemplate>
+    </template>
+
+
+    <!-- Document stylesheet -->
+    <stylesheet>
+        <!-- Conatins the style information for the document. -->
+        <blockTableStyle id="avedoTable">
+            <blockValign value="TOP" />
+            <blockAlign value="LEFT" />
+            <blockTopPadding length="2" />
+            <blockBottomPadding length="2" />
+            <blockLeftPadding length="3" />
+            <blockRightPadding length="3" />
+            <lineStyle kind="LINEBELOW" colorName="silver" start="0,1" stop="-1,-2" />
+            <lineStyle kind="LINEAFTER" colorName="silver" start="0,1" stop="-2,-1" />
+            <blockFont name="Helvetica" size="9" start="0,1" stop="-1,-1" />
+            
+            <blockTopPadding length="3" start="0,0" stop="-1,0" />
+            <blockBottomPadding length="3" start="0,0" stop="-1,0" />
+            <blockLeftPadding length="7" start="0,0" stop="-1,0" />
+            <blockRightPadding length="7" start="0,0" stop="-1,0" />
+            <blockFont name="Helvetica-Bold" size="11" start="0,0" stop="-1,0" />
+            <blockTextColor colorName="white" start="0,0" stop="-1,0" />
+            <blockBackground colorName="#3b5b86" start="0,0" stop="-1,0" />
+        </blockTableStyle>
+
+        <paraStyle 
+            name="style.centered"
+            fontName="Helvetica"
+            fontSize="8"
+            alignment="center" />
+
+	<illustrationStyle id="ilus" alignment="center" />
+		
+
+    </stylesheet>
+
+
+    <!-- File dynamic contents -->
+    <story>
+        <!-- Contains all flowable elements of the document. -->
+        <!-- They fill up the frames defined in the template section. -->
+      
+        <para style="style.centered">
+            {{name}}<br />
+            <font size="6" color="#3b5b86">{{email}}</font>
+        </para>
+
+         <spacer length="1cm" />
+        
+	 <para>
+	 Summarizing, then, we assume that the fundamental error of regarding
+	 functional notions as categorial may remedy and, at the same time,
+	 eliminate the levels of acceptability from fairly high (e.g. (99a)) to
+	 virtual gibberish (e.g. (98d)). This suggests that the theory of
+	 syntactic features developed earlier delimits a descriptive fact. We
+	 have already seen that any associated supporting element is not quite
+	 equivalent to the traditional practice of grammarians. From C1, it
+	 follows that the theory of syntactic features developed earlier can be
+	 defined in such a way as to impose irrelevant intervening contexts in
+	 selectional rules. So far, a descriptively adequate grammar is rather
+	 different from a general convention regarding the forms of the grammar.
+	 </para>
+
+
+
+        <setNextTemplate name="contentPage" />
+
+        <nextFrame />
+
+        
+        <para>
+            And here is some more content on a normal page ... In this case it is 
+            a table that shows the release history of the Ubuntu operating system:
+        </para>
+
+        
+        <spacer length="1cm" />
+
+        
+        <blockTable style="avedoTable">
+            {{script}}header = False{{endscript}}
+            {{for row in table}}
+                {{if header == False:}}
+                    <tr>
+                        {{for col in row}}
+                            <td>{{col.replace("_", " ").title()}}</td>
+                        {{endfor}}
+                        {{script}}header = True{{endscript}}
+                    </tr>
+                {{else}}
+                    <tr>
+                        {{for col in row}}
+                            <td>{{col}}</td>
+                        {{endfor}}
+                    </tr>
+                {{endif}}
+            {{endfor}}
+        </blockTable>
+
+        <spacer length="1cm" />
+        
+	<para> Inserted image below this line</para>
+
+	<!-- The <illustration> tag below defines a box (with a border turned -->
+	<!-- on, for visibility) inside which an image is placed. -->
+
+
+
+
+
+	<imageAndFlowables imageName="pie2.jpg" imageWidth="150" imageHeight="150" imageSide="left" preserveAspectRatio="yes">
+	 <para>Test imageAndFlowables tag with paras</para>
+	 <para>
+	 We should have an image on the <b>right</b>
+	 side of the paragraphs here.
+	 </para>
+	 <para>
+	 Summarizing, then, we assume that the fundamental error of regarding
+	 functional notions as categorial may remedy and, at the same time,
+	 eliminate the levels of acceptability from fairly high (e.g. (99a)) to
+	 virtual gibberish (e.g. (98d)). This suggests that the theory of
+	 syntactic features developed earlier delimits a descriptive fact. We
+	 have already seen that any associated supporting element is not quite
+	 equivalent to the traditional practice of grammarians. From C1, it
+	 follows that the theory of syntactic features developed earlier can be
+	 defined in such a way as to impose irrelevant intervening contexts in
+	 selectional rules. So far, a descriptively adequate grammar is rather
+	 different from a general convention regarding the forms of the grammar.
+	 </para>
+	</imageAndFlowables>
+
+
+
+ 	<blockTable align="center">
+	  <tr align="center">
+             <td align="center">
+	       <illustration width="500" height="500" style="ilus" align="center">
+	         <image file="pie2.jpg" x="0" y="0" width="500" height="500" showBoundary="yes" preserveAspectRatio="yes" pdfBoxType="MediaBox" />
+	       </illustration>
+	     </td>
+	  </tr>
+	  <tr>
+             <td>
+	     <para> bla bla bla </para>
+             </td>
+          </tr>
+	</blockTable>
+
+
+    </story>
+</document>

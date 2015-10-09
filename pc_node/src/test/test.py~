@@ -17,7 +17,7 @@ def main(argv):
         
     # ... and do the preprocessing.
     #{{def(sensor, date, requester_name, requester_address, requester_contact, expert_name, expert_address, expert_contact, observations, plot)}}
-    rmlText = template.get("Sensor 1", datetime.datetime.now().strftime("%Y-%m-%d"), "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA")
+    rmlText = template.get("Sensor 1", datetime.datetime.now().strftime("%Y-%m-%d"), "Andre Silva", "Introsys - Moita", "andre.silva@introsys.eu", "Magno Guedes", "Introsys - Moita", "magno.guedes@introsys.eu", "bla bla bla bla iscas saquetas", "bar_2d8.png")
     
     # Finally generate the *.pdf output ...
     pdf = rml2pdf.parseString(rmlText)
