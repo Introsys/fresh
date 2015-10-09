@@ -208,32 +208,33 @@ class Ui_MainWindow(QtGui.QMainWindow):
     self.statusbar.setStyleSheet("QStatusBar{ padding-top: 5px; padding-right: 30px; padding-bottom: 2px; padding-left: 20px;}")
     self.setStatusBar(self.statusbar)
     
-    self.pb_connect = QtGui.QPushButton("Disconnected") # Default  is disconnected
-    self.pb_connect.setCheckable(True)
-    icon = QtGui.QIcon()
-    icon.addPixmap(QtGui.QPixmap(_fromUtf8(":/images/off.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-    #icon.addPixmap(QtGui.QPixmap(_fromUtf8(":/images/on.png")), QtGui.QIcon.Normal, QtGui.QIcon.On)
-    self.pb_connect.setIcon(icon)
-    self.pb_connect.setIconSize(QtCore.QSize(16, 16))
-    font = QtGui.QFont()
-    font.setPointSize(10)
-    self.pb_connect.setFont(font)
-    self.pb_connect.setFixedSize(QtCore.QSize(115,23))
-    self.statusbar.addPermanentWidget(self.pb_connect, 0)
-    self.statusbar.setSizeGripEnabled(False)
-    
-    self.pb_open_device = QtGui.QPushButton("Closed") # Default is closed
-    self.pb_open_device.setCheckable(True)
-    icon.addPixmap(QtGui.QPixmap(_fromUtf8(":/images/off.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-    #icon.addPixmap(QtGui.QPixmap(_fromUtf8(":/images/on.png")), QtGui.QIcon.Normal, QtGui.QIcon.On)
-    self.pb_open_device.setIcon(icon)
-    self.pb_open_device.setIconSize(QtCore.QSize(16, 16))
-    font = QtGui.QFont()
-    font.setPointSize(10)
-    self.pb_open_device.setFont(font)
-    self.pb_open_device.setFixedSize(QtCore.QSize(90,23))
-    self.statusbar.addPermanentWidget(self.pb_open_device, 0)
-    self.statusbar.setSizeGripEnabled(False)
+    # self.pb_connect = QtGui.QPushButton("Disconnected") # Default  is disconnected
+    #---------------------------------------- self.pb_connect.setCheckable(True)
+    #------------------------------------------------------ icon = QtGui.QIcon()
+    # icon.addPixmap(QtGui.QPixmap(_fromUtf8(":/images/off.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+    # #icon.addPixmap(QtGui.QPixmap(_fromUtf8(":/images/on.png")), QtGui.QIcon.Normal, QtGui.QIcon.On)
+    #--------------------------------------------- self.pb_connect.setIcon(icon)
+    #------------------------- self.pb_connect.setIconSize(QtCore.QSize(16, 16))
+    #------------------------------------------------------ font = QtGui.QFont()
+    #----------------------------------------------------- font.setPointSize(10)
+    #--------------------------------------------- self.pb_connect.setFont(font)
+    #------------------------ self.pb_connect.setFixedSize(QtCore.QSize(115,23))
+    #--------------------- self.statusbar.addPermanentWidget(self.pb_connect, 0)
+    #---------------------------------- self.statusbar.setSizeGripEnabled(False)
+#------------------------------------------------------------------------------ 
+    #----- self.pb_open_device = QtGui.QPushButton("Closed") # Default is closed
+    #------------------------------------ self.pb_open_device.setCheckable(True)
+    #------------------------------------------------------ icon = QtGui.QIcon()
+    # icon.addPixmap(QtGui.QPixmap(_fromUtf8(":/images/off.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+    # #icon.addPixmap(QtGui.QPixmap(_fromUtf8(":/images/on.png")), QtGui.QIcon.Normal, QtGui.QIcon.On)
+    #----------------------------------------- self.pb_open_device.setIcon(icon)
+    #--------------------- self.pb_open_device.setIconSize(QtCore.QSize(16, 16))
+    #------------------------------------------------------ font = QtGui.QFont()
+    #----------------------------------------------------- font.setPointSize(10)
+    #----------------------------------------- self.pb_open_device.setFont(font)
+    #--------------------- self.pb_open_device.setFixedSize(QtCore.QSize(90,23))
+    #----------------- self.statusbar.addPermanentWidget(self.pb_open_device, 0)
+    #---------------------------------- self.statusbar.setSizeGripEnabled(False)
     
     
     # ------------------------------------------------------------------
@@ -278,8 +279,8 @@ class Ui_MainWindow(QtGui.QMainWindow):
     self.actionViewDetails.triggered.connect(self.showViewDetails)
     self.actionPreferences.triggered.connect(self.showPreferencesWidget)
    
-    self.pb_connect.toggled.connect(self.connectToServerPressed)
-    self.pb_open_device.toggled.connect(self.openDevicePressed)
+#     self.pb_connect.toggled.connect(self.connectToServerPressed)
+#     self.pb_open_device.toggled.connect(self.openDevicePressed)
     
     self.actionQuit.triggered.connect(self.close) # Default behavior to quit the App
 
