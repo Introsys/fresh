@@ -1,0 +1,19 @@
+#include "ec.h"
+
+ECProbe::ECProbe(){
+  byte received_from_computer=0;   //we need to know how many characters have been received.    
+  byte serial_event=0;             //a flag to signal when data has been recived from the pc/mac/other. 
+  byte code=0;                     //used to hold the I2C response code. 
+  char ec_data[48];                //we make a 48 byte character array to hold incoming data from the EC circuit. 
+  byte in_char=0;                  //used as a 1 byte buffer to store in bound bytes from the EC Circuit.   
+  byte i=0;                        //counter used for ec_data array. 
+  int time=1400;                   //used to change the delay needed depending on the command sent to the EZO Class EC Circuit.
+
+}
+
+
+ECProbe::getProbeReading(){
+
+
+
+}

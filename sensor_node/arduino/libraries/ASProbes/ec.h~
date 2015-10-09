@@ -1,0 +1,47 @@
+#ifndef EC_H
+#define EC_H
+
+
+
+
+
+#define _EC_ADDRESS 100          //default I2C ID number for EZO EC Circuit.
+
+
+
+class ECProbe {
+
+private:
+  char computerdata[20]; 
+  char ec_data[48];     
+
+  int time;             
+
+  byte received_from_computer;
+  byte serial_event;          
+  byte code;                  
+  byte in_char;               
+  byte i;                     
+
+  char *ec;
+  char *tds;
+  char *sal;
+  char *sg;           
+
+  float ec_float;
+  float tds_float;
+  float sal_float;
+  float sg_float;
+
+public: 
+
+
+  void getProbeReading();
+
+
+
+
+}
+
+
+#endif
